@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="p-6 bg-gray-100">
+
+    <!-- Ensure User is Logged In -->
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        checkAuth();
+    </script>
+
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
+    <h2 class="text-2xl font-bold mb-4">Tenant Dashboard</h2>
+
+    <!-- Room Booking Status -->
+    <div id="roomStatus" class="p-4 bg-white shadow-md rounded-lg"></div>
+
+    <!-- Billing Notifications -->
+    <h3 class="text-xl font-semibold mt-6">Billing Notifications</h3>
+    <div id="billingNotifications" class="p-4 bg-white shadow-md rounded-lg"></div>
+
+    <script type="module" src="../js/tenantDashboard.js"></script>
+</body>
+</html>

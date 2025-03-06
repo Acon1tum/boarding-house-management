@@ -14,16 +14,33 @@
         checkAuth();
     </script>
 
-
     <h2>User Profile</h2>
     <form id="profileForm">
-        <input type="text" id="name" placeholder="Full Name" required>
+        <input type="text" id="fullName" placeholder="Full Name" disabled>
         <input type="email" id="email" disabled>
         <input type="text" id="phone" placeholder="Phone Number">
         <input type="text" id="address" placeholder="Address">
         <textarea id="bio" placeholder="Short Bio"></textarea>
-        <button type="submit">Update Profile</button>
+        <button type="submit" id="updateBtn">Update Profile</button>
     </form>
+
     <script type="module" src="../js/profile.js"></script>
+
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+
+        const user = checkAuth();
+
+        // Disable editing for tenants
+        document.addEventListener("DOMContentLoaded", () => {
+            if (user.role === "tenant") {
+                document.getElementById("phone").disabled = true;
+                document.getElementById("address").disabled = true;
+                document.getElementById("bio").disabled = true;
+                document.getElementById("updateBtn").style.display = "none";
+            }
+        });
+    </script>
+
 </body>
 </html>
