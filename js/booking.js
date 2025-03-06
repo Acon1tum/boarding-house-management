@@ -10,7 +10,7 @@ async function fetchRooms() {
         .select("*")
         .gte("price", minPrice)
         .lte("price", maxPrice)
-        .eq("status", "available"); // ✅ Only fetch available rooms
+        .eq("status", "available"); // Only fetch available rooms
 
     const { data, error } = await query;
     if (error) {
@@ -51,7 +51,32 @@ async function fetchRooms() {
 
     // Attach event listeners to each "Book Now" button
     document.querySelectorAll(".book-btn").forEach(button => {
-        button.addEventListener("click", (e) => {
+        button.addEventListener("click", async (e) => {
+            const user = JSON.parse(localStorage.getItem("user"));
+            if (!user) {
+                alert("Please log in to book a room.");
+                return;
+            }
+
+            // Check if the tenant already has an approved booking
+            const { data: existingBooking, error } = await supabase
+                .from("bookings")
+                .select("id")
+                .eq("tenant_id", user.id)
+                .eq("status", "approved")
+                .maybeSingle();
+
+            if (error) {
+                console.error("Error checking existing booking:", error);
+                alert("Error checking existing bookings. Please try again.");
+                return;
+            }
+
+            if (existingBooking) {
+                alert("You already have an approved booking and cannot book another room.");
+                return;
+            }
+
             const roomId = e.target.dataset.roomId;
             const roomNumber = e.target.dataset.roomNumber;
             openBookingModal(roomId, roomNumber);
@@ -85,7 +110,26 @@ async function bookRoom(roomId) {
         return;
     }
 
-    // Verify the room is still available before booking
+    // Double-check the tenant does not already have an approved booking
+    const { data: existingBooking, error: bookingError } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("tenant_id", user.id)
+        .eq("status", "approved")
+        .maybeSingle();
+
+    if (bookingError) {
+        alert("Error checking existing bookings. Please try again.");
+        return;
+    }
+
+    if (existingBooking) {
+        alert("You already have an approved booking and cannot book another room.");
+        document.getElementById("bookingModal").classList.add("hidden");
+        return;
+    }
+
+    // Verify room is still available before booking
     const { data: roomData, error: roomError } = await supabase
         .from("rooms")
         .select("status")
@@ -104,7 +148,7 @@ async function bookRoom(roomId) {
         return;
     }
 
-    // Insert new booking
+    // Insert new booking request
     const { error } = await supabase
         .from("bookings")
         .insert([{ tenant_id: user.id, room_id: roomId, start_date: new Date(), status: "pending" }]);
