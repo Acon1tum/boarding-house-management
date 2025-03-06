@@ -16,13 +16,12 @@
         }
     </script>
 
-    <!-- Navigation Bar -->
-    <div id="navbar"></div>
-    <script>
-        fetch("navbar.html")
-            .then(response => response.text())
-            .then(data => document.getElementById("navbar").innerHTML = data);
-    </script>
+        <div id="navbar"></div>
+        <script>
+            fetch("navbar_landlord.html")
+                .then(response => response.text())
+                .then(data => document.getElementById("navbar").innerHTML = data);
+        </script>
 
     <h2 class="text-2xl font-bold mb-4">Landlord Dashboard</h2>
 

@@ -1,0 +1,18 @@
+<!-- public/navbar_tenant.html -->
+<nav class="bg-blue-500 text-white p-4 flex justify-between">
+    <a href="dashboard.html" class="text-lg font-bold">🏠 Tenant Dashboard</a>
+    <div class="flex gap-4">
+        <a href="dashboard.html" class="mx-2">Dashboard</a>
+        <a href="booking.html" class="mx-2">Book a Room</a>
+        <a href="billing.html" class="mx-2">Billing</a>
+        <a href="profile.html" class="mx-2">Profile</a>
+    </div>
+    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+</nav>
+
+<script>
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("user"); // Clear session
+        window.location.href = "login.html"; // Redirect to login
+    });
+</script>

@@ -1,0 +1,20 @@
+<!-- public/navbar_landlord.html -->
+<nav class="bg-blue-500 text-white p-4 flex justify-between">
+    <a href="landlordDashboard.html" class="text-lg font-bold">🏠 Landlord Dashboard</a>
+    <div class="flex gap-4">
+        <a href="landlordDashboard.html" class="mx-2">Dashboard</a>
+        <a href="roomManagement.html" class="mx-2">Room Management</a>
+        <a href="bookingRequests.html" class="mx-2">Book Requests</a>
+        <a href="userManagement.html" class="mx-2">Tenant Management</a>
+        <a href="billingManagement.html" class="mx-2">Billing Management</a>
+        <a href="profile.html" class="mx-2">Profile</a>
+    </div>
+    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+</nav>
+
+<script>
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("user"); // Clear session
+        window.location.href = "login.html"; // Redirect to login
+    });
+</script>
