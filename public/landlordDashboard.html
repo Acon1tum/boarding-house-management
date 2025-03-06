@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landlord Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="p-6 bg-gray-100">
+
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        const user = checkAuth();
+        if (user.role !== "landlord") {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
+    <h2 class="text-2xl font-bold mb-4">Landlord Dashboard</h2>
+
+    <!-- Sections -->
+    <h3 class="text-xl font-semibold">Room Management</h3>
+    <a href="roomManagement.html" class="bg-blue-500 text-white px-4 py-2 rounded mt-2 inline-block">Manage Rooms</a>
+
+    <h3 class="text-xl font-semibold mt-6">Booking Requests</h3>
+    <a href="bookingRequests.html" class="bg-green-500 text-white px-4 py-2 rounded mt-2 inline-block">View Requests</a>
+
+    <h3 class="text-xl font-semibold mt-6">Tenant Management</h3>
+    <a href="userManagement.html" class="bg-purple-500 text-white px-4 py-2 rounded mt-2 inline-block">Manage Tenants</a>
+
+    <h3 class="text-xl font-semibold mt-6">Billing</h3>
+    <a href="billingManagement.html" class="bg-yellow-500 text-white px-4 py-2 rounded mt-2 inline-block">Manage Billing</a>
+
+</body>
+</html>

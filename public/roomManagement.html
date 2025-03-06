@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="p-6 bg-gray-100">
+
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        const user = checkAuth();
+        if (user.role !== "landlord") {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
+    <h2 class="text-2xl font-bold mb-4">Room Management</h2>
+
+    <!-- Room Filters -->
+    <div class="mb-6 flex gap-4">
+        <input type="number" id="minPrice" placeholder="Min Price" class="p-2 border rounded">
+        <input type="number" id="maxPrice" placeholder="Max Price" class="p-2 border rounded">
+        <select id="statusFilter" class="p-2 border rounded">
+            <option value="all">All</option>
+            <option value="available">Available</option>
+            <option value="occupied">Occupied</option>
+        </select>
+        <button id="filterBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Filter</button>
+        <button id="resetFilterBtn" class="bg-gray-500 text-white px-4 py-2 rounded">Reset</button>
+    </div>
+
+    <!-- Room List -->
+    <table class="w-full bg-white shadow-md rounded-lg">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="p-2">Room Number</th>
+                <th class="p-2">Status</th>
+                <th class="p-2">Price</th>
+                <th class="p-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="roomList"></tbody>
+    </table>
+
+    <button id="createRoomBtn" class="bg-green-500 text-white px-4 py-2 mt-4 rounded">Add New Room</button>
+
+    <!-- Modal for Adding/Editing Room -->
+    <div id="roomModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h3 class="text-xl font-bold mb-4" id="modalTitle">Add New Room</h3>
+            <input type="hidden" id="roomId">
+            <input type="text" id="roomNumber" placeholder="Room Number" class="w-full p-2 border rounded mb-2">
+            <input type="number" id="roomPrice" placeholder="Price" class="w-full p-2 border rounded mb-2">
+            <select id="roomStatus" class="w-full p-2 border rounded mb-4">
+                <option value="available">Available</option>
+                <option value="occupied">Occupied</option>
+            </select>
+            <div class="flex justify-end">
+                <button id="cancelModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded mr-2">Cancel</button>
+                <button id="saveRoomBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/roomManagement.js"></script>
+
+</body>
+</html>

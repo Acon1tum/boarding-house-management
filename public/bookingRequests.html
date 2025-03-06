@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Requests</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="p-6 bg-gray-100">
+
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        const user = checkAuth();
+        if (user.role !== "landlord") {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
+    <h2 class="text-2xl font-bold mb-4">Booking Requests</h2>
+
+    <table class="w-full bg-white shadow-md rounded-lg">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="p-2">Tenant Name</th>
+                <th class="p-2">Room Number</th>
+                <th class="p-2">Start Date</th>
+                <th class="p-2">Status</th>
+                <th class="p-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="bookingList"></tbody>
+    </table>
+
+    <script type="module" src="../js/bookingRequests.js"></script>
+</body>
+</html>

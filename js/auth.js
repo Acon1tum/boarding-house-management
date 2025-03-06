@@ -39,7 +39,7 @@ async function login(email, password) {
             window.location.href = "admin.html";
             break;
         case "landlord":
-            window.location.href = "dashboard.html";
+            window.location.href = "landlordDashboard.html";
             break;
         case "tenant":
             window.location.href = "dashboard.html";
