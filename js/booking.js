@@ -1,21 +1,16 @@
-// js/booking.js
 import { supabase } from "../db/supabase.js";
 
-// Fetch Available Rooms with Filters
+// Fetch Available Rooms
 async function fetchRooms() {
     const minPrice = document.getElementById("minPrice")?.value || 0;
     const maxPrice = document.getElementById("maxPrice")?.value || 9999;
-    const status = document.getElementById("statusFilter")?.value || "available";
 
     let query = supabase
         .from("rooms")
         .select("*")
         .gte("price", minPrice)
-        .lte("price", maxPrice);
-
-    if (status !== "all") {
-        query = query.eq("status", status);
-    }
+        .lte("price", maxPrice)
+        .eq("status", "available"); // ✅ Only fetch available rooms
 
     const { data, error } = await query;
     if (error) {
@@ -23,16 +18,30 @@ async function fetchRooms() {
         return;
     }
 
+    console.log("Fetched available rooms:", data); // Debugging log
+
     const roomList = document.getElementById("roomList");
+    const noRoomsMessage = document.getElementById("noRooms");
+
+    if (!roomList || !noRoomsMessage) {
+        console.error("Missing 'roomList' or 'noRooms' element in HTML.");
+        return;
+    }
+
     roomList.innerHTML = "";
+
+    if (data.length === 0) {
+        noRoomsMessage.classList.remove("hidden");
+    } else {
+        noRoomsMessage.classList.add("hidden");
+    }
 
     data.forEach(room => {
         roomList.innerHTML += `
             <div class="p-4 border rounded-lg bg-white shadow-lg">
                 <p class="text-lg font-bold">Room ${room.room_number}</p>
                 <p class="text-gray-600">Price: $${room.price}/month</p>
-                <p class="text-gray-500">Status: ${room.status}</p>
-                <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn"
+                <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn hover:bg-green-600 transition"
                     data-room-id="${room.id}" data-room-number="${room.room_number}">
                     Book Now
                 </button>
@@ -76,18 +85,23 @@ async function bookRoom(roomId) {
         return;
     }
 
-    if (user.role === "tenant") {
-        // Check if the tenant already has a booked room
-        const { data: existingBooking } = await supabase
-            .from("bookings")
-            .select("*")
-            .eq("tenant_id", user.id)
-            .in("status", ["pending", "approved"]);
+    // Verify the room is still available before booking
+    const { data: roomData, error: roomError } = await supabase
+        .from("rooms")
+        .select("status")
+        .eq("id", roomId)
+        .single();
 
-        if (existingBooking?.length > 0) {
-            alert("You can only book one room at a time.");
-            return;
-        }
+    if (roomError) {
+        alert("Error checking room status: " + roomError.message);
+        return;
+    }
+
+    if (roomData.status !== "available") {
+        alert("This room is no longer available.");
+        document.getElementById("bookingModal").classList.add("hidden");
+        fetchRooms(); // Refresh the room list
+        return;
     }
 
     // Insert new booking
