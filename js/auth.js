@@ -51,12 +51,14 @@ async function login(email, password) {
     }
 }
 
-// User Signup Function (Registers New Users)
-async function signUp(email, password, firstName, lastName, role = "tenant") {
+// User Signup Function (Registers New Users as Tenants Only)
+async function signUp(email, password, firstName, lastName) {
+    const role = "tenant"; // Ensure only tenants can sign up
+
     const { error } = await supabase.from("users").insert([
         {
             email: email,
-            password: password, // Plain text password (not recommended)
+            password: password, // Plain text password (not recommended for production)
             role: role,
             first_name: firstName,
             last_name: lastName
@@ -98,15 +100,14 @@ document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
     await login(email, password);
 });
 
-// Event Listener for Signup Form
+// Event Listener for Signup Form (Tenant-Only Signup)
 document.querySelector("#signupForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.querySelector("#email").value;
     const password = document.querySelector("#password").value;
     const firstName = document.querySelector("#firstName").value;
     const lastName = document.querySelector("#lastName").value;
-    const role = document.querySelector("#role")?.value || "tenant";
-    await signUp(email, password, firstName, lastName, role);
+    await signUp(email, password, firstName, lastName);
 });
 
 // Event Listener for Logout Button (Works Everywhere)

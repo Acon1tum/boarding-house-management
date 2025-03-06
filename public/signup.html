@@ -7,27 +7,21 @@
     <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body>
-    <h2>Sign Up</h2>
+    <h2>Sign Up (Tenant Only)</h2>
     <form id="signupForm">
         <input type="email" id="email" placeholder="Email" required>
         <input type="password" id="password" placeholder="Password" required>
-        <select id="role">
-            <option value="tenant">Tenant</option>
-            <option value="landlord">Landlord</option>
-            <option value="admin">Admin</option>
-        </select>
+        <input type="text" id="firstName" placeholder="First Name" required>
+        <input type="text" id="lastName" placeholder="Last Name" required>
         <button type="submit">Sign Up</button>
     </form>
 
-    <script type="module">
-        import { signUp } from "../js/auth.js";
+    <p>Already have an account? <button id="loginRedirect" class="link-button">Login</button></p>
 
-        document.querySelector("#signupForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const email = document.querySelector("#email").value;
-            const password = document.querySelector("#password").value;
-            const role = document.querySelector("#role").value;
-            await signUp(email, password, role);
+    <script type="module" src="../js/auth.js"></script>
+    <script>
+        document.getElementById("loginRedirect").addEventListener("click", () => {
+            window.location.href = "login.html"; // Redirect to login page
         });
     </script>
 </body>
