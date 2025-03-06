@@ -1,36 +1,45 @@
 // js/auth.js
 import { supabase } from "../db/supabase.js";
 
-// User Login Function
+// User Login Function (Checks `users` Table)
 async function login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // Fetch user by email
+    const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .maybeSingle(); // Use maybeSingle() to avoid errors
 
     if (error) {
-        alert("Login failed: " + error.message);
+        console.error("Error fetching user:", error.message);
+        alert("Login failed: Unable to fetch user.");
         return;
     }
 
-    console.log("Login successful:", data.user);
-
-    // Fetch user role from Supabase
-    const { data: userData, error: roleError } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", data.user.id)
-        .single();
-
-    if (roleError || !userData) {
-        alert("Error fetching user role.");
+    if (!data) {
+        alert("Login failed: Invalid email or password.");
         return;
     }
+
+    // Check if the entered password matches the stored password
+    if (data.password !== password) {
+        alert("Login failed: Invalid email or password.");
+        return;
+    }
+
+    console.log("Login successful:", data);
+
+    // Store user session in localStorage (excluding password)
+    const { password: _, ...userSession } = data;
+    localStorage.setItem("user", JSON.stringify(userSession));
 
     // Redirect user based on their role
-    switch (userData.role) {
+    switch (data.role) {
         case "admin":
             window.location.href = "admin.html";
             break;
         case "landlord":
-            window.location.href = "dashboard.html"; // Change if needed
+            window.location.href = "dashboard.html";
             break;
         case "tenant":
             window.location.href = "dashboard.html";
@@ -42,19 +51,44 @@ async function login(email, password) {
     }
 }
 
-// Check if User is Authenticated
-export async function checkAuth() {
-    const { data: { user } } = await supabase.auth.getUser();
+// User Signup Function (Registers New Users)
+async function signUp(email, password, firstName, lastName, role = "tenant") {
+    const { error } = await supabase.from("users").insert([
+        {
+            email: email,
+            password: password, // Plain text password (not recommended)
+            role: role,
+            first_name: firstName,
+            last_name: lastName
+        }
+    ]);
+
+    if (error) {
+        alert("Sign-up failed: " + error.message);
+        return;
+    }
+
+    alert("Account created successfully! You can now log in.");
+    window.location.href = "login.html";
+}
+
+// Check if User is Authenticated (Redirect if Not)
+export function checkAuth() {
+    const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
         window.location.href = "login.html";
     }
+    return user;
 }
 
-// User Logout
-async function logout() {
-    await supabase.auth.signOut();
+// User Logout (Clear Session & Redirect)
+export function logout() {
+    localStorage.removeItem("user");
     window.location.href = "login.html";
 }
+
+// Export functions for use in other files
+export { login, signUp };
 
 // Event Listener for Login Form
 document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
@@ -64,7 +98,18 @@ document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
     await login(email, password);
 });
 
-// Event Listener for Logout Button (Works Anywhere)
+// Event Listener for Signup Form
+document.querySelector("#signupForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.querySelector("#email").value;
+    const password = document.querySelector("#password").value;
+    const firstName = document.querySelector("#firstName").value;
+    const lastName = document.querySelector("#lastName").value;
+    const role = document.querySelector("#role")?.value || "tenant";
+    await signUp(email, password, firstName, lastName, role);
+});
+
+// Event Listener for Logout Button (Works Everywhere)
 document.addEventListener("click", (e) => {
     if (e.target.id === "logoutBtn") {
         logout();

@@ -12,32 +12,21 @@
 </nav>
 
 <script type="module">
-    import { supabase } from "../db/supabase.js";
+    // Check if user is logged in
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    async function checkUser() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            window.location.href = "login.html";
-        }
-
-        // Fetch user role from Supabase
-        const { data, error } = await supabase.from("users").select("role").eq("id", user.id).single();
-        if (error || !data) {
-            console.error("Error fetching user role:", error);
-            return;
-        }
-
-        // Show admin panel if user is an admin
-        if (data.role === "admin") {
+    if (!user) {
+        window.location.href = "login.html"; // Redirect to login if not logged in
+    } else {
+        // Show Admin link if user is an admin
+        if (user.role === "admin") {
             document.getElementById("adminLink").classList.remove("hidden");
         }
     }
 
-    // Logout
-    document.getElementById("logoutBtn")?.addEventListener("click", async () => {
-        await supabase.auth.signOut();
-        window.location.href = "login.html";
+    // Logout Function
+    document.getElementById("logoutBtn")?.addEventListener("click", () => {
+        localStorage.removeItem("user"); // Clear session
+        window.location.href = "login.html"; // Redirect to login
     });
-
-    checkUser();
 </script>
