@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body>
+
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        checkAuth();
+    </script>
+
+
     <h2>User Profile</h2>
     <form id="profileForm">
         <input type="text" id="name" placeholder="Full Name" required>

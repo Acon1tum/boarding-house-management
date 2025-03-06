@@ -1,33 +1,44 @@
 // js/auth.js
 import { supabase } from "../db/supabase.js";
 
-// User Login
+// User Login Function
 async function login(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
         alert("Login failed: " + error.message);
-    } else {
-        console.log("Login successful:", data.user);
+        return;
+    }
 
-        // Fetch the user's role
-        const { data: userData, error: roleError } = await supabase
-            .from("users")
-            .select("role")
-            .eq("id", data.user.id)
-            .single();
+    console.log("Login successful:", data.user);
 
-        if (roleError) {
-            alert("Error fetching user role: " + roleError.message);
-            return;
-        }
+    // Fetch user role from Supabase
+    const { data: userData, error: roleError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
 
-        // Redirect based on role
-        if (userData.role === "admin") {
+    if (roleError || !userData) {
+        alert("Error fetching user role.");
+        return;
+    }
+
+    // Redirect user based on their role
+    switch (userData.role) {
+        case "admin":
             window.location.href = "admin.html";
-        } else {
+            break;
+        case "landlord":
+            window.location.href = "dashboard.html"; // Change if needed
+            break;
+        case "tenant":
             window.location.href = "dashboard.html";
-        }
+            break;
+        default:
+            alert("Invalid user role.");
+            window.location.href = "login.html";
+            break;
     }
 }
 
@@ -53,7 +64,7 @@ document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
     await login(email, password);
 });
 
-// Event Listener for Logout Button (Works Everywhere)
+// Event Listener for Logout Button (Works Anywhere)
 document.addEventListener("click", (e) => {
     if (e.target.id === "logoutBtn") {
         logout();

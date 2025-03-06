@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body>
+    
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        checkAuth();
+    </script>
+
+
     <h2>Your Bills</h2>
     <div id="billList"></div>
     <script type="module" src="../js/billing.js"></script>

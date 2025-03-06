@@ -6,7 +6,7 @@
         <a href="booking.html" class="mx-2">Book a Room</a>
         <a href="billing.html" class="mx-2">Billing</a>
         <a href="profile.html" class="mx-2">Profile</a>
-        <a href="admin.html" class="mx-2" id="adminLink" style="display: none;">Admin</a>
+        <a href="admin.html" class="mx-2 hidden" id="adminLink">Admin</a>
         <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
     </div>
 </nav>
@@ -17,16 +17,23 @@
     async function checkUser() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            window.location.href = "login.html"; // Redirect to login if not logged in
+            window.location.href = "login.html";
+        }
+
+        // Fetch user role from Supabase
+        const { data, error } = await supabase.from("users").select("role").eq("id", user.id).single();
+        if (error || !data) {
+            console.error("Error fetching user role:", error);
+            return;
         }
 
         // Show admin panel if user is an admin
-        const { data } = await supabase.from("users").select("role").eq("id", user.id).single();
         if (data.role === "admin") {
-            document.getElementById("adminLink").style.display = "inline";
+            document.getElementById("adminLink").classList.remove("hidden");
         }
     }
 
+    // Logout
     document.getElementById("logoutBtn")?.addEventListener("click", async () => {
         await supabase.auth.signOut();
         window.location.href = "login.html";
