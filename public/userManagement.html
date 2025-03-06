@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tenant Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="p-6 bg-gray-100">
+<body class="bg-gray-100 min-h-screen flex flex-col">
 
+    <!-- Ensure User is Logged In -->
     <script type="module">
         import { checkAuth } from "../js/auth.js";
         const user = checkAuth();
@@ -19,46 +20,72 @@
     <!-- Navigation Bar -->
     <div id="navbar"></div>
     <script>
-        fetch("navbar.html")
+        fetch("navbar_landlord.html")
             .then(response => response.text())
             .then(data => document.getElementById("navbar").innerHTML = data);
     </script>
 
-    <h2 class="text-2xl font-bold mb-4">Tenant Management</h2>
+    <!-- Main Content -->
+    <main class="container mx-auto p-6">
+        <div class="text-center mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">👥 Tenant Management</h2>
+            <p class="text-gray-600">Manage tenants, add new tenants, or update their details.</p>
+        </div>
 
-    <!-- Search & Filter -->
-    <div class="mb-6 flex gap-4">
-        <input type="text" id="searchInput" placeholder="Search by Name or Email" class="p-2 border rounded">
-        <button id="searchBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Search</button>
-        <button id="resetBtn" class="bg-gray-500 text-white px-4 py-2 rounded">Reset</button>
-    </div>
+        <!-- Search Bar Section -->
+        <div class="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">🔍 Search Tenants</h3>
+            <div class="flex gap-4">
+                <input type="text" id="searchInput" placeholder="Enter Name or Email" 
+                    class="p-2 border rounded w-full focus:ring-2 focus:ring-blue-400">
+                <button id="searchBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+                    Search
+                </button>
+                <button id="resetBtn" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                    Reset
+                </button>
+            </div>
+        </div>
 
-    <!-- Tenant List -->
-    <table class="w-full bg-white shadow-md rounded-lg">
-        <thead>
-            <tr class="bg-gray-200">
-                <th class="p-2">Name</th>
-                <th class="p-2">Email</th>
-                <th class="p-2">Actions</th>
-            </tr>
-        </thead>
-        <tbody id="tenantList"></tbody>
-    </table>
-
-    <button id="createTenantBtn" class="bg-green-500 text-white px-4 py-2 mt-4 rounded">Add Tenant</button>
+        <!-- Tenant List Table -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold text-gray-700">📋 List of Tenants</h3>
+                <button id="createTenantBtn" class="bg-green-500 text-white px-6 py-2 rounded-lg shadow-md hover:bg-green-600 transition">
+                    ➕ Add Tenant
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-700">
+                            <th class="p-3 text-left">Name</th>
+                            <th class="p-3 text-left">Email</th>
+                            <th class="p-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenantList" class="bg-white divide-y divide-gray-300"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 
     <!-- Modal for Adding/Editing Tenant -->
     <div id="tenantModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
         <div class="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 class="text-xl font-bold mb-4" id="modalTitle">Add Tenant</h3>
+            <h3 class="text-xl font-bold mb-4" id="modalTitle">➕ Add Tenant</h3>
             <input type="hidden" id="tenantId">
             <input type="text" id="tenantFirstName" placeholder="First Name" class="w-full p-2 border rounded mb-2">
             <input type="text" id="tenantLastName" placeholder="Last Name" class="w-full p-2 border rounded mb-2">
             <input type="email" id="tenantEmail" placeholder="Email" class="w-full p-2 border rounded mb-2">
             <input type="password" id="tenantPassword" placeholder="Password (Leave blank to keep current password)" class="w-full p-2 border rounded mb-4">
-            <div class="flex justify-end">
-                <button id="cancelModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded mr-2">Cancel</button>
-                <button id="saveTenantBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+            <div class="flex justify-end gap-2">
+                <button id="cancelModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                    Cancel
+                </button>
+                <button id="saveTenantBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+                    Save
+                </button>
             </div>
         </div>
     </div>

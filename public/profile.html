@@ -1,28 +1,48 @@
-<!-- public/profile.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
 
+    <!-- Ensure User is Logged In -->
     <script type="module">
         import { checkAuth } from "../js/auth.js";
         checkAuth();
     </script>
 
-    <h2>User Profile</h2>
-    <form id="profileForm">
-        <input type="text" id="fullName" placeholder="Full Name" disabled>
-        <input type="email" id="email" disabled>
-        <input type="text" id="phone" placeholder="Phone Number">
-        <input type="text" id="address" placeholder="Address">
-        <textarea id="bio" placeholder="Short Bio"></textarea>
-        <button type="submit" id="updateBtn">Update Profile</button>
-    </form>
+    <!-- Profile Container -->
+    <div class="bg-white p-8 rounded-lg shadow-lg w-96 text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">👤 User Profile</h2>
+        <p class="text-gray-500 mb-6">View and update your profile information</p>
+
+        <form id="profileForm" class="flex flex-col gap-4">
+            <input type="text" id="fullName" placeholder="Full Name" disabled 
+                class="p-3 border rounded bg-gray-100">
+            <input type="email" id="email" disabled 
+                class="p-3 border rounded bg-gray-100">
+            <input type="text" id="phone" placeholder="Phone Number" 
+                class="p-3 border rounded">
+            <input type="text" id="address" placeholder="Address" 
+                class="p-3 border rounded">
+            <textarea id="bio" placeholder="Short Bio" rows="3"
+                class="p-3 border rounded resize-none"></textarea>
+
+            <button type="submit" id="updateBtn"
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                Update Profile
+            </button>
+        </form>
+
+        <!-- Return to Dashboard Button -->
+        <button id="returnDashboard"
+            class="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">
+            ⬅️ Return to Dashboard
+        </button>
+    </div>
 
     <script type="module" src="../js/profile.js"></script>
 
@@ -38,6 +58,15 @@
                 document.getElementById("address").disabled = true;
                 document.getElementById("bio").disabled = true;
                 document.getElementById("updateBtn").style.display = "none";
+            }
+        });
+
+        // Redirect User to Their Dashboard Based on Role
+        document.getElementById("returnDashboard").addEventListener("click", () => {
+            if (user.role === "landlord") {
+                window.location.href = "landlordDashboard.html";
+            } else {
+                window.location.href = "dashboard.html"; // Tenant Dashboard
             }
         });
     </script>
