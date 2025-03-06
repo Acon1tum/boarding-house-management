@@ -18,18 +18,26 @@ async function fetchRooms() {
     }
 
     const roomList = document.getElementById("roomList");
-    roomList.innerHTML = data.map(room => `
-        <tr class="border-b">
-            <td class="p-2">${room.room_number}</td>
-            <td class="p-2">${room.status}</td>
-            <td class="p-2">$${room.price}</td>
-            <td class="p-2">
-                <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-            </td>
-        </tr>
-    `).join("");
+
+    // Update the room table with the room data
+    roomList.innerHTML = data.map(room => {
+        // Conditional class for status color
+        const statusClass = room.status === "available" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
+
+        return `
+            <tr class="border-b">
+                <td class="p-2">${room.room_number}</td>
+                <td class="p-2 ${statusClass}">${room.status}</td>
+                <td class="p-2">$${room.price}</td>
+                <td class="p-2">
+                    <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+                    <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                </td>
+            </tr>
+        `;
+    }).join("");  // Join all the rows together and inject into the table body
 }
+
 
 // Open Create Room Modal
 document.getElementById("createRoomBtn").addEventListener("click", () => {
