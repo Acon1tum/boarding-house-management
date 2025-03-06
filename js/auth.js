@@ -1,14 +1,43 @@
-// js/auth.js
 import { supabase } from "../db/supabase.js";
 
-// User Login Function (Checks `users` Table)
+// Check if User is Authenticated (Redirect if Not)
+export function checkAuth() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+        window.location.href = "login.html"; // Redirect if not logged in
+    }
+    return user;
+}
+
+// Prevent Access to Login or Signup Pages if Already Logged In
+export function preventAuthPages() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+        // Redirect user based on their role
+        switch (user.role) {
+            case "admin":
+                window.location.href = "admin.html";
+                break;
+            case "landlord":
+                window.location.href = "landlordDashboard.html";
+                break;
+            case "tenant":
+                window.location.href = "dashboard.html";
+                break;
+            default:
+                localStorage.removeItem("user"); // Clear invalid user session
+                window.location.href = "login.html";
+        }
+    }
+}
+
+// User Login Function
 async function login(email, password) {
-    // Fetch user by email
     const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("email", email)
-        .maybeSingle(); // Use maybeSingle() to avoid errors
+        .maybeSingle(); 
 
     if (error) {
         console.error("Error fetching user:", error.message);
@@ -16,13 +45,7 @@ async function login(email, password) {
         return;
     }
 
-    if (!data) {
-        alert("Login failed: Invalid email or password.");
-        return;
-    }
-
-    // Check if the entered password matches the stored password
-    if (data.password !== password) {
+    if (!data || data.password !== password) {
         alert("Login failed: Invalid email or password.");
         return;
     }
@@ -47,7 +70,6 @@ async function login(email, password) {
         default:
             alert("Invalid user role.");
             window.location.href = "login.html";
-            break;
     }
 }
 
@@ -55,15 +77,9 @@ async function login(email, password) {
 async function signUp(email, password, firstName, lastName) {
     const role = "tenant"; // Ensure only tenants can sign up
 
-    const { error } = await supabase.from("users").insert([
-        {
-            email: email,
-            password: password, // Plain text password (not recommended for production)
-            role: role,
-            first_name: firstName,
-            last_name: lastName
-        }
-    ]);
+    const { error } = await supabase.from("users").insert([{
+        email, password, role, first_name: firstName, last_name: lastName
+    }]);
 
     if (error) {
         alert("Sign-up failed: " + error.message);
@@ -74,25 +90,13 @@ async function signUp(email, password, firstName, lastName) {
     window.location.href = "login.html";
 }
 
-// Check if User is Authenticated (Redirect if Not)
-export function checkAuth() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) {
-        window.location.href = "login.html";
-    }
-    return user;
-}
-
 // User Logout (Clear Session & Redirect)
 export function logout() {
     localStorage.removeItem("user");
     window.location.href = "login.html";
 }
 
-// Export functions for use in other files
-export { login, signUp };
-
-// Event Listener for Login Form
+// Attach Event Listeners
 document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.querySelector("#email").value;
@@ -100,7 +104,6 @@ document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
     await login(email, password);
 });
 
-// Event Listener for Signup Form (Tenant-Only Signup)
 document.querySelector("#signupForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.querySelector("#email").value;
@@ -110,7 +113,6 @@ document.querySelector("#signupForm")?.addEventListener("submit", async (e) => {
     await signUp(email, password, firstName, lastName);
 });
 
-// Event Listener for Logout Button (Works Everywhere)
 document.addEventListener("click", (e) => {
     if (e.target.id === "logoutBtn") {
         logout();

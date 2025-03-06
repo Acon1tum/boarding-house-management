@@ -8,6 +8,11 @@
 </head>
 <body class="h-screen flex items-center justify-center bg-gray-100">
 
+    <script type="module">
+        import { preventAuthPages } from "../js/auth.js";
+        preventAuthPages(); // Redirect if already logged in
+    </script>
+
     <div class="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 class="text-2xl font-bold text-center mb-1">Sign Up</h2>
         <h2 class="text-xl font-semibold text-center text-gray-600 mb-6">(Tenant Only)</h2>
@@ -26,7 +31,7 @@
     <script type="module" src="../js/auth.js"></script>
     <script>
         document.getElementById("loginRedirect").addEventListener("click", () => {
-            window.location.href = "login.html"; // Redirect to login page
+            window.location.href = "login.html";
         });
     </script>
 

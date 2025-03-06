@@ -8,6 +8,11 @@
 </head>
 <body class="h-screen flex items-center justify-center bg-gray-100">
 
+    <script type="module">
+        import { preventAuthPages } from "../js/auth.js";
+        preventAuthPages(); // Redirect if already logged in
+    </script>
+
     <div class="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
         <form id="loginForm" class="flex flex-col gap-4">
@@ -23,7 +28,7 @@
     <script type="module" src="../js/auth.js"></script>
     <script>
         document.getElementById("signupRedirect").addEventListener("click", () => {
-            window.location.href = "signup.html"; // Redirect to signup page
+            window.location.href = "signup.html";
         });
     </script>
 
