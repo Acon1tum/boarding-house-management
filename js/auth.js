@@ -4,16 +4,29 @@ import { supabase } from "../db/supabase.js";
 export function checkAuth() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
+        console.warn("No user found, redirecting to login.");
         window.location.href = "login.html"; // Redirect if not logged in
     }
+    console.log("User authenticated:", user);
     return user;
+}
+
+// Get User Details (Accessible on Any Page)
+export function getUserDetails() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+        console.log("Retrieved user details:", user);
+        return user;
+    }
+    console.warn("User details not found in localStorage.");
+    return null;
 }
 
 // Prevent Access to Login or Signup Pages if Already Logged In
 export function preventAuthPages() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user) {
-        // Redirect user based on their role
+        console.log("Redirecting logged-in user:", user);
         switch (user.role) {
             case "admin":
                 window.location.href = "admin.html";
@@ -25,7 +38,7 @@ export function preventAuthPages() {
                 window.location.href = "dashboard.html";
                 break;
             default:
-                localStorage.removeItem("user"); // Clear invalid user session
+                localStorage.removeItem("user"); // Clear invalid session
                 window.location.href = "login.html";
         }
     }
@@ -73,25 +86,9 @@ async function login(email, password) {
     }
 }
 
-// User Signup Function (Registers New Users as Tenants Only)
-async function signUp(email, password, firstName, lastName) {
-    const role = "tenant"; // Ensure only tenants can sign up
-
-    const { error } = await supabase.from("users").insert([{
-        email, password, role, first_name: firstName, last_name: lastName
-    }]);
-
-    if (error) {
-        alert("Sign-up failed: " + error.message);
-        return;
-    }
-
-    alert("Account created successfully! You can now log in.");
-    window.location.href = "login.html";
-}
-
 // User Logout (Clear Session & Redirect)
 export function logout() {
+    console.log("Logging out user...");
     localStorage.removeItem("user");
     window.location.href = "login.html";
 }
@@ -102,15 +99,6 @@ document.querySelector("#loginForm")?.addEventListener("submit", async (e) => {
     const email = document.querySelector("#email").value;
     const password = document.querySelector("#password").value;
     await login(email, password);
-});
-
-document.querySelector("#signupForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = document.querySelector("#email").value;
-    const password = document.querySelector("#password").value;
-    const firstName = document.querySelector("#firstName").value;
-    const lastName = document.querySelector("#lastName").value;
-    await signUp(email, password, firstName, lastName);
 });
 
 document.addEventListener("click", (e) => {
