@@ -36,8 +36,12 @@ async function fetchAllBills() {
                 ${bill.status}
             </td>
             <td class="p-3 flex gap-2">
-                <button class="bg-green-500 text-white px-2 py-1 rounded mark-paid-btn" data-id="${bill.id}">Mark Paid</button>
-                <button class="bg-red-500 text-white px-2 py-1 rounded delete-bill-btn" data-id="${bill.id}">Delete</button>
+                <button class="bg-green-500 text-white px-2 py-1 rounded mark-paid-btn" data-id="${bill.id}" data-amount="${bill.amount}">
+                    Mark Paid
+                </button>
+                <button class="bg-red-500 text-white px-2 py-1 rounded delete-bill-btn" data-id="${bill.id}">
+                    Delete
+                </button>
             </td>
         </tr>
     `).join("");
@@ -48,9 +52,10 @@ async function fetchAllBills() {
 // Attach event listeners dynamically
 function attachEventListeners() {
     document.querySelectorAll(".mark-paid-btn").forEach(button => {
-        button.addEventListener("click", async () => {
+        button.addEventListener("click", () => {
             const billId = button.getAttribute("data-id");
-            await markAsPaid(billId);
+            const amount = button.getAttribute("data-amount");
+            openConfirmationModal(billId, amount);
         });
     });
 
@@ -61,6 +66,25 @@ function attachEventListeners() {
         });
     });
 }
+
+// Open Confirmation Modal for Mark as Paid
+function openConfirmationModal(billId, amount) {
+    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>$${amount}</strong> as paid?`;
+    document.getElementById("confirmMarkPaidBtn").setAttribute("data-id", billId);
+    document.getElementById("confirmationModal").classList.remove("hidden");
+}
+
+// Confirm Mark as Paid
+document.getElementById("confirmMarkPaidBtn").addEventListener("click", async function () {
+    const billId = this.getAttribute("data-id");
+    await markAsPaid(billId);
+    document.getElementById("confirmationModal").classList.add("hidden");
+});
+
+// Close Confirmation Modal
+document.getElementById("closeConfirmationBtn").addEventListener("click", () => {
+    document.getElementById("confirmationModal").classList.add("hidden");
+});
 
 // Mark a Bill as Paid
 async function markAsPaid(id) {
