@@ -8,10 +8,13 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
-    <!-- Ensure User is Logged In -->
+    <!-- Ensure User is Logged In and Authorized -->
     <script type="module">
         import { checkAuth } from "../js/auth.js";
-        checkAuth();
+        const user = checkAuth();
+        if (user.role !== "landlord") {
+            window.location.href = "dashboard.html"; // Redirect to dashboard if not landlord
+        }
     </script>
 
     <!-- Navigation Bar -->

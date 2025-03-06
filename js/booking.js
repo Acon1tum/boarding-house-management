@@ -1,5 +1,35 @@
 import { supabase } from "../db/supabase.js";
 
+// Ensure that only tenants can access the booking page
+document.addEventListener("DOMContentLoaded", () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    
+    if (!user) {
+        console.warn("No user found, redirecting to login.");
+        window.location.href = "login.html";  // Redirect if no user is logged in
+        return;
+    }
+
+    if (user.role !== "tenant") {
+        console.warn("Non-tenant user trying to access tenant page, redirecting.");
+        // Redirect non-tenants to their appropriate page
+        switch (user.role) {
+            case "admin":
+                window.location.href = "admin.html";
+                break;
+            case "landlord":
+                window.location.href = "landlordDashboard.html";
+                break;
+            default:
+                window.location.href = "login.html";
+        }
+        return;
+    }
+
+    console.log("User authenticated as tenant:", user);
+    fetchRooms();  // Proceed to fetch rooms for the tenant.
+});
+
 // Fetch Available Rooms
 async function fetchRooms() {
     const minPrice = document.getElementById("minPrice")?.value || 0;
@@ -167,6 +197,3 @@ document.getElementById("filterForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
     fetchRooms();
 });
-
-// Initialize
-document.addEventListener("DOMContentLoaded", fetchRooms);

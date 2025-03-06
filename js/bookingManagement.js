@@ -4,6 +4,12 @@ import { getUserDetails } from "../js/auth.js";
 // Fetch All Bookings
 async function fetchAllBookings() {
     const user = getUserDetails();
+
+    // Check if user is a landlord, otherwise redirect to dashboard
+    if (user.role !== "landlord") {
+        window.location.href = "dashboard.html"; // Redirect if not landlord
+        return;
+    }
     
     // Log the user info if you want (optional)
     console.log("Fetching all bookings for user:", user);  // This is just for debugging if needed
@@ -19,7 +25,7 @@ async function fetchAllBookings() {
             rooms(room_number),
             tenant_id,
             users(first_name, last_name)
-        `)  // Select tenant name from related users table
+        `);  // Select tenant name from related users table
 
     // Log the fetched bookings data to check
     console.log("Fetched bookings data:", bookings);

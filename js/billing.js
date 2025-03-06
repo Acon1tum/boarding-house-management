@@ -1,5 +1,37 @@
 import { supabase } from "../db/supabase.js";
 
+// Ensure that only tenants can access the bills page
+document.addEventListener("DOMContentLoaded", () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    
+    if (!user) {
+        console.warn("No user found, redirecting to login.");
+        window.location.href = "login.html";  // Redirect if no user is logged in
+        return;
+    }
+
+    if (user.role !== "tenant") {
+        console.warn("Non-tenant user trying to access tenant page, redirecting.");
+        // Redirect non-tenants to their appropriate page
+        switch (user.role) {
+            case "admin":
+                window.location.href = "admin.html";
+                break;
+            case "landlord":
+                window.location.href = "landlordDashboard.html";
+                break;
+            default:
+                window.location.href = "login.html";
+        }
+        return;
+    }
+
+    console.log("User authenticated as tenant:", user);
+    fetchBills();  // Proceed to fetch bills for the tenant.
+
+    setInterval(checkDueBills, 60000);  // Check for due bills every minute
+});
+
 // Fetch Bills
 async function fetchBills() {
     // Get the logged-in user
@@ -82,9 +114,3 @@ async function checkDueBills() {
         sendNotification("You have pending bills due soon!");
     }
 }
-
-// Event Listener
-document.addEventListener("DOMContentLoaded", () => {
-    fetchBills();  // Fetch bills when the page loads
-    setInterval(checkDueBills, 60000);  // Check for due bills every minute
-});
