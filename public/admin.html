@@ -9,6 +9,14 @@
 </head>
 <body class="p-6 bg-gray-100">
 
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
     <script type="module">
         import { checkAuth } from "../js/auth.js";
         checkAuth();
