@@ -11,8 +11,11 @@ async function fetchRooms() {
         .from("rooms")
         .select("*")
         .gte("price", minPrice)
-        .lte("price", maxPrice)
-        .eq("status", status);
+        .lte("price", maxPrice);
+
+    if (status !== "all") {
+        query = query.eq("status", status);
+    }
 
     const { data, error } = await query;
     if (error) {
@@ -27,27 +30,64 @@ async function fetchRooms() {
         roomList.innerHTML += `
             <div class="p-4 border rounded-lg bg-white shadow-lg">
                 <p class="text-lg font-bold">Room ${room.room_number}</p>
-                <p class="text-gray-600">$${room.price}/month</p>
-                <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded" onclick="bookRoom('${room.id}')">Book Now</button>
+                <p class="text-gray-600">Price: $${room.price}/month</p>
+                <p class="text-gray-500">Status: ${room.status}</p>
+                <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn"
+                    data-room-id="${room.id}" data-room-number="${room.room_number}">
+                    Book Now
+                </button>
             </div>
         `;
     });
+
+    // Attach event listeners to each "Book Now" button
+    document.querySelectorAll(".book-btn").forEach(button => {
+        button.addEventListener("click", (e) => {
+            const roomId = e.target.dataset.roomId;
+            const roomNumber = e.target.dataset.roomNumber;
+            openBookingModal(roomId, roomNumber);
+        });
+    });
 }
+
+// Open Booking Confirmation Modal
+function openBookingModal(roomId, roomNumber) {
+    document.getElementById("modalRoomNumber").textContent = `Room ${roomNumber}`;
+    document.getElementById("confirmBookingBtn").setAttribute("data-room-id", roomId);
+    document.getElementById("bookingModal").classList.remove("hidden");
+}
+
+// Close Modal
+document.getElementById("closeModalBtn").addEventListener("click", () => {
+    document.getElementById("bookingModal").classList.add("hidden");
+});
+
+// Confirm Booking
+document.getElementById("confirmBookingBtn").addEventListener("click", async function () {
+    const roomId = this.getAttribute("data-room-id");
+    bookRoom(roomId);
+});
 
 // Book a Room
 async function bookRoom(roomId) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return alert("Please log in to book a room.");
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+        alert("Please log in to book a room.");
+        return;
+    }
 
-    // Check if user has already booked a room
-    const { data: existingBooking } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("tenant_id", user.id)
-        .eq("status", "pending");
+    if (user.role === "tenant") {
+        // Check if the tenant already has a booked room
+        const { data: existingBooking } = await supabase
+            .from("bookings")
+            .select("*")
+            .eq("tenant_id", user.id)
+            .in("status", ["pending", "approved"]);
 
-    if (existingBooking?.length > 0) {
-        return alert("You already have a pending booking.");
+        if (existingBooking?.length > 0) {
+            alert("You can only book one room at a time.");
+            return;
+        }
     }
 
     // Insert new booking
@@ -59,6 +99,7 @@ async function bookRoom(roomId) {
         alert("Booking failed: " + error.message);
     } else {
         alert("Booking request sent!");
+        document.getElementById("bookingModal").classList.add("hidden");
         fetchRooms();
     }
 }
