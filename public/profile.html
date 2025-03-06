@@ -20,8 +20,12 @@
         <p class="text-gray-500 mb-6">View and update your profile information</p>
 
         <form id="profileForm" class="flex flex-col gap-4">
-            <input type="text" id="fullName" placeholder="Full Name" disabled 
-                class="p-3 border rounded bg-gray-100">
+            <div class="flex gap-4">
+                <input type="text" id="firstName" placeholder="First Name" 
+                    class="p-3 border rounded bg-gray-100 w-1/2">
+                <input type="text" id="lastName" placeholder="Last Name" 
+                    class="p-3 border rounded bg-gray-100 w-1/2">
+            </div>
             <input type="email" id="email" disabled 
                 class="p-3 border rounded bg-gray-100">
             <input type="text" id="phone" placeholder="Phone Number" 
@@ -35,41 +39,16 @@
                 class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
                 Update Profile
             </button>
-        </form>
 
-        <!-- Return to Dashboard Button -->
-        <button id="returnDashboard"
-            class="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">
-            ⬅️ Return to Dashboard
-        </button>
+            <!-- Button to return to dashboard without making any changes -->
+            <button type="button" id="returnDashboardBtn" 
+                class="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">
+                Return to Dashboard
+            </button>
+        </form>
     </div>
 
     <script type="module" src="../js/profile.js"></script>
-
-    <script type="module">
-        import { checkAuth } from "../js/auth.js";
-
-        const user = checkAuth();
-
-        // Disable editing for tenants
-        document.addEventListener("DOMContentLoaded", () => {
-            if (user.role === "tenant") {
-                document.getElementById("phone").disabled = true;
-                document.getElementById("address").disabled = true;
-                document.getElementById("bio").disabled = true;
-                document.getElementById("updateBtn").style.display = "none";
-            }
-        });
-
-        // Redirect User to Their Dashboard Based on Role
-        document.getElementById("returnDashboard").addEventListener("click", () => {
-            if (user.role === "landlord") {
-                window.location.href = "landlordDashboard.html";
-            } else {
-                window.location.href = "dashboard.html"; // Tenant Dashboard
-            }
-        });
-    </script>
 
 </body>
 </html>

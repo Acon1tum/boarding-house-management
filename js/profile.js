@@ -1,4 +1,3 @@
-// js/profile.js
 import { supabase } from "../db/supabase.js";
 
 // Fetch User Profile
@@ -27,47 +26,70 @@ async function getUserProfile() {
     }
 
     // Display user data in the form
-    document.getElementById("fullName").value = `${data.first_name} ${data.last_name}`;
+    document.getElementById("firstName").value = data.first_name || "";
+    document.getElementById("lastName").value = data.last_name || "";
     document.getElementById("email").value = data.email;
     document.getElementById("phone").value = data.phone || "";
     document.getElementById("address").value = data.address || "";
     document.getElementById("bio").value = data.bio || "";
 
-    // Disable editing for tenants
-    if (user.role === "tenant") {
-        document.getElementById("phone").disabled = true;
-        document.getElementById("address").disabled = true;
-        document.getElementById("bio").disabled = true;
-        document.getElementById("updateBtn").style.display = "none";
-    }
+    // Allow tenants to edit everything
+    document.getElementById("updateBtn").style.display = "block";
 }
 
-// Update Profile (Only for Landlords & Admins)
+// Update Profile (for all users including tenants)
 async function updateProfile(event) {
     event.preventDefault();
 
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || user.role === "tenant") {
-        alert("You are not allowed to update the profile.");
+    if (!user) {
+        alert("User not found.");
         return;
     }
 
-    const phone = document.getElementById("phone").value;
+    const firstName = document.getElementById("firstName").value;
+    const lastName = document.getElementById("lastName").value;
+    let phone = document.getElementById("phone").value;
     const address = document.getElementById("address").value;
     const bio = document.getElementById("bio").value;
 
+    // Validate phone number (must be 11 digits and only numbers)
+    const phoneRegex = /^[0-9]{11}$/;
+    if (!phoneRegex.test(phone)) {
+        alert("Phone number must be 11 digits long and contain only numbers.");
+        return;
+    }
+
     const { error } = await supabase
         .from("users")
-        .update({ phone, address, bio })
+        .update({ first_name: firstName, last_name: lastName, phone, address, bio })
         .eq("id", user.id);
 
     if (error) {
         alert("Update failed: " + error.message);
     } else {
         alert("Profile updated successfully!");
+
+        // Redirect user based on their role
+        if (user.role === "landlord") {
+            window.location.href = "landlordDashboard.html"; // Redirect to landlord dashboard
+        } else {
+            window.location.href = "dashboard.html"; // Redirect to tenant dashboard
+        }
+    }
+}
+
+// Redirect to Dashboard without making changes
+function returnToDashboard() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user.role === "landlord") {
+        window.location.href = "landlordDashboard.html"; // Redirect to landlord dashboard
+    } else {
+        window.location.href = "dashboard.html"; // Redirect to tenant dashboard
     }
 }
 
 // Initialize Profile
 document.addEventListener("DOMContentLoaded", getUserProfile);
 document.getElementById("profileForm")?.addEventListener("submit", updateProfile);
+document.getElementById("returnDashboardBtn")?.addEventListener("click", returnToDashboard);
