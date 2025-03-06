@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Ensure User is Logged In -->
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        checkAuth();
+    </script>
+
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar_tenant.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-6">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">📋 My Bookings</h2>
+
+        <!-- Booking List -->
+        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">🛏️ Approved Bookings</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-700">
+                            <th class="p-3 text-left">Room Number</th>
+                            <th class="p-3 text-left">Start Date</th>
+                            <th class="p-3 text-left">End Date</th>
+                            <th class="p-3 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingListTable" class="bg-white divide-y divide-gray-300">
+                        <tr>
+                            <td class="p-3 text-gray-600 text-center" colspan="4">Loading bookings...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Import Booking Management JS -->
+    <script type="module" src="../js/bookingManagement.js"></script>
+
+</body>
+</html>
