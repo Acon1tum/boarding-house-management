@@ -7,6 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="p-6 bg-gray-100">
+
+    <!-- Navigation Bar -->
+    <div id="navbar"></div>
+    <script>
+        fetch("navbar.html")
+            .then(response => response.text())
+            .then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+
     <h2 class="text-2xl font-bold mb-4">Book a Room</h2>
 
     <!-- Room Filters -->
@@ -23,6 +32,14 @@
     <!-- Room List -->
     <div id="roomList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
+    <!-- Import Booking.js -->
     <script type="module" src="../js/booking.js"></script>
+
+    <!-- Ensure User is Logged In -->
+    <script type="module">
+        import { checkAuth } from "../js/auth.js";
+        checkAuth();
+    </script>
+
 </body>
 </html>
