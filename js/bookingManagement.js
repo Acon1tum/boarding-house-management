@@ -50,6 +50,15 @@ async function fetchAllBookings() {
             const tenantLastName = booking.users ? booking.users.last_name : "Tenant";
             const tenantFullName = `${tenantFirstName} ${tenantLastName}`;
             
+            // Dynamically set status color based on the booking status
+            let statusColorClass = "text-yellow-500";  // Default color for pending status
+
+            if (booking.status === "approved") {
+                statusColorClass = "text-green-500 font-semibold";  // Green for approved
+            } else if (booking.status === "rejected") {
+                statusColorClass = "text-red-500 font-semibold";  // Red for rejected
+            }
+
             // Return HTML table rows for each booking
             return `
                 <tr class="border-b">
@@ -57,7 +66,7 @@ async function fetchAllBookings() {
                     <td class="p-3">${tenantFullName}</td>
                     <td class="p-3">${new Date(booking.start_date).toLocaleDateString()}</td>
                     <td class="p-3">${booking.end_date ? new Date(booking.end_date).toLocaleDateString() : "N/A"}</td>
-                    <td class="p-3 text-green-500 font-semibold">${booking.status}</td>
+                    <td class="p-3 ${statusColorClass}">${booking.status}</td>  <!-- Dynamically applied status color -->
                 </tr>
             `;
         })
