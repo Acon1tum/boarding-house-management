@@ -35,7 +35,6 @@ BOARDING123houseHere's a checklist based on the features you've mentioned:
 ### **Feature #4: Automated Billing & Notifications**
 - [x] **Generate automated monthly invoices** for tenants.
 - [x] **Send rent reminders and payment due notifications** to tenants.
-- [ ] **Notify tenants about policy updates and emergency announcements**.
 - [x] **Include detailed billing history and payment tracking** for tenants.
 - [x] **Allow landlords/admins to manage billing settings and payment policies**.
 - [x] **Test notification and billing flow** (ensuring proper communication and delivery).
