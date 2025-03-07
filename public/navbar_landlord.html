@@ -1,16 +1,29 @@
 <!-- public/navbar_landlord.html -->
-<nav class="bg-blue-500 text-white p-4 flex justify-between">
+<nav class="bg-blue-500 text-white p-4 flex justify-between items-center">
     <a href="landlordDashboard.html" class="text-lg font-bold">🏠 Landlord Dashboard</a>
-    <div class="flex gap-4">
-        <a href="landlordDashboard.html" class="mx-2">Dashboard</a>
-        <a href="roomManagement.html" class="mx-2">Room Management</a>
-        <a href="bookingRequests.html" class="mx-2">Book Requests</a>
-        <a href="userManagement.html" class="mx-2">Tenant Management</a>
-        <a href="billingManagement.html" class="mx-2">Billing Management</a>
-        <a href="bookingManagement.html" class="mx-2">booking Management</a>
-        <a href="profile.html" class="mx-2">Profile</a>
+
+    <div class="flex gap-4 items-center">
+        <a href="landlordDashboard.html" class="mx-2 hover:scale-105 transition">Dashboard</a>
+
+        <!-- Dropdown for Management Sections -->
+        <div class="relative group">
+            <button class="mx-2 focus:outline-none transition transform group-hover:scale-110">📂 Manage ▼</button>
+            <div class="absolute hidden group-hover:block bg-white text-black shadow-lg rounded-lg mt-2 w-48 transition transform scale-95 group-hover:scale-105">
+                <a href="roomManagement.html" class="block px-4 py-2 hover:bg-gray-200">🏠 Room Management</a>
+                <a href="bookingRequests.html" class="block px-4 py-2 hover:bg-gray-200">📩 Booking Requests</a>
+                <a href="userManagement.html" class="block px-4 py-2 hover:bg-gray-200">👥 Tenant Management</a>
+                <a href="billingManagement.html" class="block px-4 py-2 hover:bg-gray-200">💰 Billing Management</a>
+                <a href="bookingManagement.html" class="block px-4 py-2 hover:bg-gray-200">📅 Booking Management</a>
+                <a href="maintenanceManagement.html" class="block px-4 py-2 hover:bg-gray-200">🔧 Maintenance Management</a>
+            </div>
+        </div>
+
+        <a href="profile.html" class="mx-2 hover:scale-105 transition">👤 Profile</a>
     </div>
-    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+
+    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition transform hover:scale-105">
+        Logout
+    </button>
 </nav>
 
 <script>
