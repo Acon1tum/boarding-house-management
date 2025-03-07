@@ -24,7 +24,7 @@ BOARDING123houseHere's a checklist based on the features you've mentioned:
 ### **Feature #3: Room & Facility Booking**
 - [x] **Display real-time availability of rooms and facilities**.
 - [x] **Allow tenants to book rooms and facilities directly from the platform**.
-- [ ] **Enable tenants to request maintenance for certain amenities**.
+- [x] **Enable tenants to request maintenance for certain amenities**.
 - [x] **Send booking confirmations and reminders to tenants**.
 - [x] **Allow landlords/admins to manage room/facility availability**.
 - [x] **Track booking history and status** for users.
