@@ -70,7 +70,7 @@ async function fetchRooms() {
         roomList.innerHTML += `
             <div class="p-4 border rounded-lg bg-white shadow-lg">
                 <p class="text-lg font-bold">Room ${room.room_number}</p>
-                <p class="text-gray-600">Price: $${room.price}/month</p>
+                <p class="text-gray-600">Price: ₱${room.price}/month</p>
                 <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn hover:bg-green-600 transition"
                     data-room-id="${room.id}" data-room-number="${room.room_number}">
                     Book Now

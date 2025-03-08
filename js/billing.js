@@ -86,7 +86,7 @@ async function fetchBills() {
 
         billList.innerHTML += `
             <tr>
-                <td class="p-3 text-gray-600">$${bill.amount}</td>
+                <td class="p-3 text-gray-600">₱${bill.amount}</td>
                 <td class="p-3 text-gray-600">${new Date(bill.due_date).toDateString()}</td>
                 <td class="p-3 ${statusClass}">${bill.status}</td>
             </tr>

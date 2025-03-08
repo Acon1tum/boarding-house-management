@@ -39,7 +39,7 @@ async function fetchBookingStatus() {
         <h3 class="text-xl font-semibold">Your Booking</h3>
         <p class="text-lg">Room: ${booking.rooms.room_number}</p>
         <p>Status: <span class="text-green-500 font-medium">Approved</span></p>
-        <p>Price: $${booking.rooms.price} / month</p>
+        <p>Price: ₱${booking.rooms.price} / month</p>
         <p>Start Date: ${new Date(booking.start_date).toLocaleDateString()}</p>
         ${booking.end_date ? `<p>End Date: ${new Date(booking.end_date).toLocaleDateString()}</p>` : ""}
     `;
@@ -76,7 +76,7 @@ async function fetchBillingNotifications() {
 
     billingDiv.innerHTML = bills.map(bill => `
         <div class="border-b py-2">
-            <p>Amount: <strong>$${bill.amount}</strong></p>
+            <p>Amount: <strong>₱${bill.amount}</strong></p>
             <p>Due Date: ${new Date(bill.due_date).toDateString()}</p>
             <p>Status: <span class="text-red-500 font-semibold">${bill.status}</span></p>
         </div>

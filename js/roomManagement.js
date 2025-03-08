@@ -28,7 +28,7 @@ async function fetchRooms() {
             <tr class="border-b">
                 <td class="p-2">${room.room_number}</td>
                 <td class="p-2 ${statusClass}">${room.status}</td>
-                <td class="p-2">$${room.price}</td>
+                <td class="p-2">₱${room.price}</td>
                 <td class="p-2">
                     <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
                     <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>

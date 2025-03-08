@@ -36,7 +36,7 @@ async function fetchRooms() {
         data.forEach(room => {
             roomList.innerHTML += `
                 <div class="p-4 border rounded-lg">
-                    <p>Room ${room.room_number} - $${room.price}/month</p>
+                    <p>Room ${room.room_number} - ₱${room.price}/month</p>
                     <p>Status: ${room.status}</p>
                     <button class="bg-blue-500 text-white px-3 py-1 rounded" onclick="toggleRoomStatus('${room.id}', '${room.status}')">Toggle Status</button>
                 </div>
