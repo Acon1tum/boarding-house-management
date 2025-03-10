@@ -1,43 +1,91 @@
 import { supabase } from "../db/supabase.js";
 
-// Fetch Rooms
+const roomsPerPage = 5; // Number of rooms per page
+let currentPage = 1;
+let totalPages = 1;
+let sortBy = "room_number"; // Default sorting
+
+// Fetch Rooms with Pagination & Sorting
 async function fetchRooms() {
     const minPrice = document.getElementById("minPrice").value || 0;
-    const maxPrice = document.getElementById("maxPrice").value || 9999;
+    const maxPrice = document.getElementById("maxPrice").value || 99999;
     const status = document.getElementById("statusFilter").value;
 
-    let query = supabase.from("rooms").select("*").gte("price", minPrice).lte("price", maxPrice);
+    let query = supabase
+        .from("rooms")
+        .select("*", { count: "exact" })
+        .gte("price", minPrice)
+        .lte("price", maxPrice)
+        .order(sortBy, { ascending: true });
+
     if (status !== "all") {
         query = query.eq("status", status);
     }
 
-    const { data, error } = await query;
+    // Pagination
+    const from = (currentPage - 1) * roomsPerPage;
+    const to = from + roomsPerPage - 1;
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+
     if (error) {
         console.error("Error fetching rooms:", error);
         return;
     }
 
+    totalPages = Math.ceil(count / roomsPerPage);
+    updatePagination();
+
     const roomList = document.getElementById("roomList");
-
-    // Update the room table with the room data
-    roomList.innerHTML = data.map(room => {
-        // Conditional class for status color
-        const statusClass = room.status === "available" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
-
-        return `
-            <tr class="border-b">
-                <td class="p-2">${room.room_number}</td>
-                <td class="p-2 ${statusClass}">${room.status}</td>
-                <td class="p-2">₱${room.price}</td>
-                <td class="p-2">
-                    <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                    <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                </td>
-            </tr>
-        `;
-    }).join("");  // Join all the rows together and inject into the table body
+    roomList.innerHTML = data
+        .map((room) => {
+            const statusClass = room.status === "available" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
+            return `
+                <tr class="border-b">
+                    <td class="p-2">${room.room_number}</td>
+                    <td class="p-2 ${statusClass}">${room.status}</td>
+                    <td class="p-2">₱${room.price}</td>
+                    <td class="p-2">
+                        <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+                        <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                    </td>
+                </tr>
+            `;
+        })
+        .join("");
 }
 
+// Update Pagination UI
+function updatePagination() {
+    document.getElementById("currentPage").textContent = currentPage;
+    document.getElementById("totalPages").textContent = totalPages;
+
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = currentPage === totalPages;
+}
+
+// Next Page
+document.getElementById("nextPage").addEventListener("click", () => {
+    if (currentPage < totalPages) {
+        currentPage++;
+        fetchRooms();
+    }
+});
+
+// Previous Page
+document.getElementById("prevPage").addEventListener("click", () => {
+    if (currentPage > 1) {
+        currentPage--;
+        fetchRooms();
+    }
+});
+
+// Sorting
+document.getElementById("sortBy").addEventListener("change", (event) => {
+    sortBy = event.target.value;
+    fetchRooms();
+});
 
 // Open Create Room Modal
 document.getElementById("createRoomBtn").addEventListener("click", () => {
@@ -116,9 +164,13 @@ document.getElementById("resetFilterBtn").addEventListener("click", () => {
     document.getElementById("minPrice").value = "";
     document.getElementById("maxPrice").value = "";
     document.getElementById("statusFilter").value = "all";
+    currentPage = 1;
     fetchRooms();
 });
 
 // Initialize
-document.getElementById("filterBtn").addEventListener("click", fetchRooms);
+document.getElementById("filterBtn").addEventListener("click", () => {
+    currentPage = 1;
+    fetchRooms();
+});
 document.addEventListener("DOMContentLoaded", fetchRooms);

@@ -1,32 +1,82 @@
 import { supabase } from "../db/supabase.js";
 
-// Fetch Tenants (without search applied on first load)
-async function fetchTenants(searchQuery = null) {
-    let query = supabase.from("users").select("*").eq("role", "tenant");
+const tenantsPerPage = 5; // Number of tenants per page
+let currentPage = 1;
+let totalPages = 1;
+let sortBy = "first_name"; // Default sorting
 
-    // Apply search only if a query is provided (not on first load)
+// Fetch Tenants with Pagination & Sorting
+async function fetchTenants(searchQuery = null) {
+    let query = supabase.from("users").select("*", { count: "exact" }).eq("role", "tenant");
+
+    // Apply search filter
     if (searchQuery && searchQuery.trim() !== "") {
         query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
     }
 
-    const { data, error } = await query;
+    // Sorting
+    query = query.order(sortBy, { ascending: true });
+
+    // Pagination
+    const from = (currentPage - 1) * tenantsPerPage;
+    const to = from + tenantsPerPage - 1;
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+
     if (error) {
         console.error("Error fetching tenants:", error);
         return;
     }
 
+    totalPages = Math.ceil(count / tenantsPerPage);
+    updatePagination();
+
     const tenantList = document.getElementById("tenantList");
-    tenantList.innerHTML = data.map(tenant => `
-        <tr class="border-b">
-            <td class="p-2">${tenant.first_name} ${tenant.last_name}</td>
-            <td class="p-2">${tenant.email}</td>
-            <td class="p-2">
-                <button onclick="editTenant('${tenant.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                <button onclick="deleteTenant('${tenant.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-            </td>
-        </tr>
-    `).join("");
+    tenantList.innerHTML = data
+        .map((tenant) => `
+            <tr class="border-b">
+                <td class="p-2">${tenant.first_name} ${tenant.last_name}</td>
+                <td class="p-2">${tenant.email}</td>
+                <td class="p-2">
+                    <button onclick="editTenant('${tenant.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+                    <button onclick="deleteTenant('${tenant.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                </td>
+            </tr>
+        `)
+        .join("");
 }
+
+// Update Pagination UI
+function updatePagination() {
+    document.getElementById("currentPage").textContent = currentPage;
+    document.getElementById("totalPages").textContent = totalPages;
+
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = currentPage === totalPages;
+}
+
+// Next Page
+document.getElementById("nextPage").addEventListener("click", () => {
+    if (currentPage < totalPages) {
+        currentPage++;
+        fetchTenants();
+    }
+});
+
+// Previous Page
+document.getElementById("prevPage").addEventListener("click", () => {
+    if (currentPage > 1) {
+        currentPage--;
+        fetchTenants();
+    }
+});
+
+// Sorting
+document.getElementById("sortBy").addEventListener("change", (event) => {
+    sortBy = event.target.value;
+    fetchTenants();
+});
 
 // Open Create Tenant Modal
 document.getElementById("createTenantBtn").addEventListener("click", () => {
@@ -61,7 +111,7 @@ document.getElementById("cancelModalBtn").addEventListener("click", () => {
     document.getElementById("tenantModal").classList.add("hidden");
 });
 
-// Save Tenant (Add or Edit) with Confirmation
+// Save Tenant (Add or Edit)
 document.getElementById("saveTenantBtn").addEventListener("click", async () => {
     const id = document.getElementById("tenantId").value;
     const firstName = document.getElementById("tenantFirstName").value.trim();
@@ -73,9 +123,6 @@ document.getElementById("saveTenantBtn").addEventListener("click", async () => {
         alert("First name, last name, and email are required!");
         return;
     }
-
-    const confirmation = confirm(id ? "Are you sure you want to update this tenant?" : "Are you sure you want to add this tenant?");
-    if (!confirmation) return;
 
     let query;
     if (id) {
@@ -97,7 +144,7 @@ document.getElementById("saveTenantBtn").addEventListener("click", async () => {
     }
 });
 
-// Delete Tenant with Confirmation
+// Delete Tenant
 window.deleteTenant = async function (id) {
     if (!confirm("Are you sure you want to delete this tenant?")) return;
 
@@ -109,7 +156,7 @@ window.deleteTenant = async function (id) {
     }
 };
 
-// Apply Search Only When User Clicks Search Button
+// Search
 document.getElementById("searchBtn").addEventListener("click", () => {
     const searchQuery = document.getElementById("searchInput").value.trim();
     fetchTenants(searchQuery);
@@ -121,5 +168,5 @@ document.getElementById("resetBtn").addEventListener("click", () => {
     fetchTenants();
 });
 
-// Load All Tenants on First Load (Without Search)
+// Load Tenants on First Load
 document.addEventListener("DOMContentLoaded", () => fetchTenants(null));

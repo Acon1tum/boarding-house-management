@@ -1,15 +1,17 @@
 <!-- public/navbar_landlord.html -->
-<nav class="bg-blue-500 text-white p-4 flex justify-between items-center">
+<nav class="bg-blue-500 text-white p-4 flex flex-wrap items-center justify-between">
+    <!-- Logo -->
     <a href="landlordDashboard.html" class="text-lg font-bold flex items-center gap-2">
         🏠 StayMate
     </a>
 
-    <div class="flex gap-4 items-center">
-        <a href="landlordDashboard.html" class="mx-2 hover:scale-105 transition">Dashboard</a>
+    <!-- Navigation Links (Responsive) -->
+    <div class="flex flex-wrap justify-center gap-4 text-sm md:text-base">
+        <a href="landlordDashboard.html" class="hover:scale-105 transition">Dashboard</a>
 
         <!-- Dropdown for Management Sections -->
         <div class="relative group">
-            <button class="mx-2 focus:outline-none transition transform group-hover:scale-110">📂 Manage ▼</button>
+            <button class="focus:outline-none transition transform group-hover:scale-110">📂 Manage ▼</button>
             <div class="absolute hidden group-hover:block bg-white text-black shadow-lg rounded-lg mt-2 w-48 transition transform scale-95 group-hover:scale-105">
                 <a href="roomManagement.html" class="block px-4 py-2 hover:bg-gray-200">🏠 Room Management</a>
                 <a href="bookingRequests.html" class="block px-4 py-2 hover:bg-gray-200">📩 Booking Requests</a>
@@ -21,9 +23,10 @@
             </div>
         </div>
 
-        <a href="profile.html" class="mx-2 hover:scale-105 transition">👤 Profile</a>
+        <a href="profile.html" class="hover:scale-105 transition">👤 Profile</a>
     </div>
 
+    <!-- Logout Button -->
     <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition transform hover:scale-105">
         Logout
     </button>
