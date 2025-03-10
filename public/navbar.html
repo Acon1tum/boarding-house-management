@@ -1,26 +1,43 @@
 <!-- public/navbar.html -->
-<nav class="bg-blue-500 text-white p-4 flex justify-between">
-    <a href="index.html" class="text-lg font-bold">🏠 Boarding House</a>
-    <div>
-        <a href="dashboard.html" class="mx-2">Dashboard</a>
-        <a href="booking.html" class="mx-2">Book a Room</a>
-        <a href="billing.html" class="mx-2">Billing</a>
-        <a href="profile.html" class="mx-2">Profile</a>
-        <a href="admin.html" class="mx-2 hidden" id="adminLink">Admin</a>
-        <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+<nav class="bg-blue-500 text-white p-4 flex items-center justify-between">
+    <!-- Left: StayMate Logo -->
+    <a href="index.html" class="text-lg font-bold flex items-center gap-2">
+        🏠 StayMate
+    </a>
+
+    <!-- Center: Navigation Links -->
+    <div class="flex gap-6 items-center">
+        <a href="dashboard.html" class="mx-2 hover:scale-105 transition">Dashboard</a>
+
+        <!-- Dropdown for Admin Management (Visible Only to Admins) -->
+        <div class="relative group hidden" id="adminMenu">
+            <button class="mx-2 focus:outline-none transition transform group-hover:scale-110">⚙️ Admin Panel ▼</button>
+            <div class="absolute hidden group-hover:block bg-white text-black shadow-lg rounded-lg mt-2 w-48 transition transform scale-95 group-hover:scale-105">
+                <a href="admin.html" class="block px-4 py-2 hover:bg-gray-200">🏢 Admin Dashboard</a>
+                <a href="userManagement.html" class="block px-4 py-2 hover:bg-gray-200">👥 User Management</a>
+                <a href="reports.html" class="block px-4 py-2 hover:bg-gray-200">📊 Reports</a>
+            </div>
+        </div>
+
+        <a href="profile.html" class="mx-2 hover:scale-105 transition">👤 Profile</a>
     </div>
+
+    <!-- Right: Logout Button -->
+    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition transform hover:scale-105">
+        Logout
+    </button>
 </nav>
 
-<script type="module">
+<script>
     // Check if user is logged in
     const user = JSON.parse(localStorage.getItem("user"));
 
     if (!user) {
         window.location.href = "login.html"; // Redirect to login if not logged in
     } else {
-        // Show Admin link if user is an admin
+        // Show Admin Menu if user is an admin
         if (user.role === "admin") {
-            document.getElementById("adminLink").classList.remove("hidden");
+            document.getElementById("adminMenu").classList.remove("hidden");
         }
     }
 
