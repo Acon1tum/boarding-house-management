@@ -1,16 +1,21 @@
 <!-- public/navbar_tenant.html -->
-<nav class="bg-blue-500 text-white p-4 flex justify-between">
-    <a href="dashboard.html" class="text-lg font-bold">🏠 Tenant Dashboard</a>
+<nav class="bg-blue-500 text-white p-4 flex justify-between items-center">
+    <a href="dashboard.html" class="text-lg font-bold flex items-center gap-2">
+        🏠 StayMate
+    </a>
+
     <div class="flex gap-4">
-        <a href="dashboard.html" class="mx-2">Dashboard</a>
-        <a href="booking.html" class="mx-2">Book a Room</a>
-        <a href="billing.html" class="mx-2">Billing</a>
-        <a href="maintenance.html" class="mx-2">Request Maintenance</a>
-        <a href="cancelRoom.html" class="mx-2">Cancel Room</a>
-        <a href="profile.html" class="mx-2">👤 Profile</a>
-        
+        <a href="dashboard.html" class="mx-2 hover:scale-105 transition">Dashboard</a>
+        <a href="booking.html" class="mx-2 hover:scale-105 transition">Book a Room</a>
+        <a href="billing.html" class="mx-2 hover:scale-105 transition">Billing</a>
+        <a href="maintenance.html" class="mx-2 hover:scale-105 transition">Request Maintenance</a>
+        <a href="cancelRoom.html" class="mx-2 hover:scale-105 transition">Cancel Room</a>
+        <a href="profile.html" class="mx-2 hover:scale-105 transition">👤 Profile</a>
     </div>
-    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded">Logout</button>
+
+    <button id="logoutBtn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition transform hover:scale-105">
+        Logout
+    </button>
 </nav>
 
 <script>
