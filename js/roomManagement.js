@@ -5,6 +5,16 @@ let currentPage = 1;
 let totalPages = 1;
 let sortBy = "room_number"; // Default sorting
 
+// Convert Image to Base64
+async function convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result); // Base64 string
+        reader.onerror = (error) => reject(error);
+    });
+}
+
 // Fetch Rooms with Pagination & Sorting
 async function fetchRooms() {
     const minPrice = document.getElementById("minPrice").value || 0;
@@ -41,9 +51,13 @@ async function fetchRooms() {
     roomList.innerHTML = data
         .map((room) => {
             const statusClass = room.status === "available" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
+            const imageSrc = room.image_base64 ? room.image_base64 : "default-room.jpg"; // Default if no image
             return `
                 <tr class="border-b">
                     <td class="p-2">${room.room_number}</td>
+                    <td class="p-2"><img src="${imageSrc}" class="w-16 h-16 object-cover rounded"></td>
+                    <td class="p-2">${room.bedrooms}</td>
+                    <td class="p-2">${room.capacity}</td>
                     <td class="p-2 ${statusClass}">${room.status}</td>
                     <td class="p-2">₱${room.price}</td>
                     <td class="p-2">
@@ -93,7 +107,10 @@ document.getElementById("createRoomBtn").addEventListener("click", () => {
     document.getElementById("roomId").value = "";
     document.getElementById("roomNumber").value = "";
     document.getElementById("roomPrice").value = "";
+    document.getElementById("bedrooms").value = "";
+    document.getElementById("capacity").value = "";
     document.getElementById("roomStatus").value = "available";
+    document.getElementById("roomImage").value = "";
     document.getElementById("roomModal").classList.remove("hidden");
 });
 
@@ -109,6 +126,8 @@ window.editRoom = async function (id) {
     document.getElementById("roomId").value = data.id;
     document.getElementById("roomNumber").value = data.room_number;
     document.getElementById("roomPrice").value = data.price;
+    document.getElementById("bedrooms").value = data.bedrooms;
+    document.getElementById("capacity").value = data.capacity;
     document.getElementById("roomStatus").value = data.status;
     document.getElementById("roomModal").classList.remove("hidden");
 };
@@ -123,18 +142,40 @@ document.getElementById("saveRoomBtn").addEventListener("click", async () => {
     const id = document.getElementById("roomId").value;
     const roomNumber = document.getElementById("roomNumber").value.trim();
     const price = document.getElementById("roomPrice").value.trim();
+    const bedrooms = document.getElementById("bedrooms").value.trim();
+    const capacity = document.getElementById("capacity").value.trim();
     const status = document.getElementById("roomStatus").value;
+    const imageFile = document.getElementById("roomImage").files[0];
 
-    if (!roomNumber || !price) {
+    if (!roomNumber || !price || !bedrooms || !capacity) {
         alert("All fields are required!");
         return;
     }
 
+    let imageBase64 = null;
+    if (imageFile) {
+        imageBase64 = await convertToBase64(imageFile);
+    }
+
     let query;
     if (id) {
-        query = supabase.from("rooms").update({ room_number: roomNumber, price, status }).eq("id", id);
+        query = supabase.from("rooms").update({ 
+            room_number: roomNumber, 
+            price, 
+            bedrooms, 
+            capacity, 
+            status, 
+            image_base64: imageBase64 || undefined 
+        }).eq("id", id);
     } else {
-        query = supabase.from("rooms").insert([{ room_number: roomNumber, price, status }]);
+        query = supabase.from("rooms").insert([{
+            room_number: roomNumber,
+            price,
+            bedrooms,
+            capacity,
+            status,
+            image_base64: imageBase64
+        }]);
     }
 
     const { error } = await query;

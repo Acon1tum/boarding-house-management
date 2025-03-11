@@ -6,13 +6,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if (!user) {
         console.warn("No user found, redirecting to login.");
-        window.location.href = "login.html";  // Redirect if no user is logged in
+        window.location.href = "login.html";  
         return;
     }
 
     if (user.role !== "tenant") {
         console.warn("Non-tenant user trying to access tenant page, redirecting.");
-        // Redirect non-tenants to their appropriate page
         switch (user.role) {
             case "admin":
                 window.location.href = "admin.html";
@@ -27,20 +26,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     console.log("User authenticated as tenant:", user);
-    fetchRooms();  // Proceed to fetch rooms for the tenant.
+    fetchRooms(); 
 });
 
-// Fetch Available Rooms
+// Fetch Available Rooms with Images, Bedrooms & Capacity
 async function fetchRooms() {
     const minPrice = document.getElementById("minPrice")?.value || 0;
     const maxPrice = document.getElementById("maxPrice")?.value || 9999;
+    const minBedrooms = document.getElementById("minBedrooms")?.value || 1;
+    const minCapacity = document.getElementById("minCapacity")?.value || 1;
 
     let query = supabase
         .from("rooms")
         .select("*")
         .gte("price", minPrice)
         .lte("price", maxPrice)
-        .eq("status", "available"); // Only fetch available rooms
+        .gte("bedrooms", minBedrooms)
+        .gte("capacity", minCapacity)
+        .eq("status", "available");
 
     const { data, error } = await query;
     if (error) {
@@ -48,7 +51,7 @@ async function fetchRooms() {
         return;
     }
 
-    console.log("Fetched available rooms:", data); // Debugging log
+    console.log("Fetched available rooms:", data); 
 
     const roomList = document.getElementById("roomList");
     const noRoomsMessage = document.getElementById("noRooms");
@@ -67,10 +70,15 @@ async function fetchRooms() {
     }
 
     data.forEach(room => {
+        const imageSrc = room.image_base64 ? room.image_base64 : "default-room.jpg"; // Use default if no image
+
         roomList.innerHTML += `
             <div class="p-4 border rounded-lg bg-white shadow-lg">
+                <img src="${imageSrc}" alt="Room Image" class="w-full h-48 object-cover rounded">
                 <p class="text-lg font-bold">Room ${room.room_number}</p>
                 <p class="text-gray-600">Price: ₱${room.price}/month</p>
+                <p class="text-gray-600">Bedrooms: ${room.bedrooms}</p>
+                <p class="text-gray-600">Capacity: ${room.capacity} people</p>
                 <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn hover:bg-green-600 transition"
                     data-room-id="${room.id}" data-room-number="${room.room_number}">
                     Book Now
