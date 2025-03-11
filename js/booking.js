@@ -80,7 +80,9 @@ async function fetchRooms() {
                 <p class="text-gray-600">Bedrooms: ${room.bedrooms}</p>
                 <p class="text-gray-600">Capacity: ${room.capacity} people</p>
                 <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn hover:bg-green-600 transition"
-                    data-room-id="${room.id}" data-room-number="${room.room_number}">
+                    data-room-id="${room.id}" 
+                    data-room-number="${room.room_number}"
+                    data-room-image="${imageSrc}">
                     Book Now
                 </button>
             </div>
@@ -117,14 +119,25 @@ async function fetchRooms() {
 
             const roomId = e.target.dataset.roomId;
             const roomNumber = e.target.dataset.roomNumber;
-            openBookingModal(roomId, roomNumber);
+            const roomImage = e.target.dataset.roomImage;
+
+            openBookingModal(roomId, roomNumber, roomImage);
         });
     });
 }
 
-// Open Booking Confirmation Modal
-function openBookingModal(roomId, roomNumber) {
+// Open Booking Confirmation Modal with Image
+function openBookingModal(roomId, roomNumber, roomImage) {
     document.getElementById("modalRoomNumber").textContent = `Room ${roomNumber}`;
+
+    const modalImage = document.getElementById("modalRoomImage");
+    if (roomImage) {
+        modalImage.src = roomImage;
+        modalImage.classList.remove("hidden");
+    } else {
+        modalImage.classList.add("hidden");
+    }
+
     document.getElementById("confirmBookingBtn").setAttribute("data-room-id", roomId);
     document.getElementById("bookingModal").classList.remove("hidden");
 }
