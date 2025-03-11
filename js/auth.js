@@ -157,3 +157,104 @@ document.addEventListener("click", (e) => {
         logout();
     }
 });
+
+export async function registerTenant(userData) {
+    // Validate required fields
+    if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
+        return { 
+            success: false, 
+            error: "All fields are required" 
+        };
+    }
+
+    try {
+        // Check if user with this email already exists
+        const { data: existingUser, error: checkError } = await supabase
+            .from("users")
+            .select("email")
+            .eq("email", userData.email)
+            .maybeSingle();
+
+        if (checkError) {
+            console.error("Error checking existing user:", checkError);
+            return { 
+                success: false, 
+                error: "Error during registration process" 
+            };
+        }
+
+        if (existingUser) {
+            return { 
+                success: false, 
+                error: "User with this email already exists" 
+            };
+        }
+
+        // Insert new user
+        const { data, error } = await supabase
+            .from("users")
+            .insert([
+                {
+                    role: "tenant", // Default role for signup page
+                    first_name: userData.firstName,
+                    last_name: userData.lastName,
+                    email: userData.email,
+                    password: userData.password, // Note: In production, you should hash this password
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error registering user:", error);
+            return { 
+                success: false, 
+                error: "Failed to register user" 
+            };
+        }
+
+        console.log("User registered successfully:", data);
+        return { 
+            success: true, 
+            user: data 
+        };
+    } catch (error) {
+        console.error("Unexpected error during registration:", error);
+        return { 
+            success: false, 
+            error: "An unexpected error occurred" 
+        };
+    }
+}
+
+// Signup form handler
+document.addEventListener('DOMContentLoaded', () => {
+    const signupForm = document.getElementById('signupForm');
+    
+    if (signupForm) {
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get form values
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Register the user
+            const result = await registerTenant({
+                firstName,
+                lastName,
+                email,
+                password
+            });
+            
+            if (result.success) {
+                alert("Registration successful! Please log in.");
+                window.location.href = "login.html";
+            } else {
+                alert(`Registration failed: ${result.error}`);
+            }
+        });
+    }
+});
