@@ -1,23 +1,19 @@
 import { supabase } from "../db/supabase.js";
 
-const tenantsPerPage = 5; // Number of tenants per page
+const tenantsPerPage = 5;
 let currentPage = 1;
 let totalPages = 1;
-let sortBy = "first_name"; // Default sorting
+let sortBy = "first_name";
 
-// Fetch Tenants with Pagination & Sorting
 async function fetchTenants(searchQuery = null) {
     let query = supabase.from("users").select("*", { count: "exact" }).eq("role", "tenant");
 
-    // Apply search filter
     if (searchQuery && searchQuery.trim() !== "") {
         query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
     }
 
-    // Sorting
     query = query.order(sortBy, { ascending: true });
 
-    // Pagination
     const from = (currentPage - 1) * tenantsPerPage;
     const to = from + tenantsPerPage - 1;
     query = query.range(from, to);
@@ -33,21 +29,19 @@ async function fetchTenants(searchQuery = null) {
     updatePagination();
 
     const tenantList = document.getElementById("tenantList");
-    tenantList.innerHTML = data
-        .map((tenant) => `
-            <tr class="border-b">
-                <td class="p-2">${tenant.first_name} ${tenant.last_name}</td>
-                <td class="p-2">${tenant.email}</td>
-                <td class="p-2">
-                    <button onclick="editTenant('${tenant.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                    <button onclick="deleteTenant('${tenant.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                </td>
-            </tr>
-        `)
-        .join("");
+    tenantList.innerHTML = data.map(tenant => `
+        <tr class="border-b">
+            <td class="p-2">${tenant.first_name} ${tenant.last_name}</td>
+            <td class="p-2">${tenant.email}</td>
+            <td class="p-2">
+                <button onclick="editTenant('${tenant.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
+                <button onclick="deleteTenant('${tenant.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                <button onclick="viewBilling('${tenant.id}')" class="bg-green-500 text-white px-2 py-1 rounded">View</button>
+            </td>
+        </tr>
+    `).join("");
 }
 
-// Update Pagination UI
 function updatePagination() {
     document.getElementById("currentPage").textContent = currentPage;
     document.getElementById("totalPages").textContent = totalPages;
@@ -56,7 +50,6 @@ function updatePagination() {
     document.getElementById("nextPage").disabled = currentPage === totalPages;
 }
 
-// Next Page
 document.getElementById("nextPage").addEventListener("click", () => {
     if (currentPage < totalPages) {
         currentPage++;
@@ -64,7 +57,6 @@ document.getElementById("nextPage").addEventListener("click", () => {
     }
 });
 
-// Previous Page
 document.getElementById("prevPage").addEventListener("click", () => {
     if (currentPage > 1) {
         currentPage--;
@@ -72,13 +64,11 @@ document.getElementById("prevPage").addEventListener("click", () => {
     }
 });
 
-// Sorting
 document.getElementById("sortBy").addEventListener("change", (event) => {
     sortBy = event.target.value;
     fetchTenants();
 });
 
-// Open Create Tenant Modal
 document.getElementById("createTenantBtn").addEventListener("click", () => {
     document.getElementById("modalTitle").textContent = "Add Tenant";
     document.getElementById("tenantId").value = "";
@@ -89,7 +79,6 @@ document.getElementById("createTenantBtn").addEventListener("click", () => {
     document.getElementById("tenantModal").classList.remove("hidden");
 });
 
-// Open Edit Tenant Modal
 window.editTenant = async function (id) {
     const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
     if (error || !data) {
@@ -106,12 +95,10 @@ window.editTenant = async function (id) {
     document.getElementById("tenantModal").classList.remove("hidden");
 };
 
-// Close Modal
 document.getElementById("cancelModalBtn").addEventListener("click", () => {
     document.getElementById("tenantModal").classList.add("hidden");
 });
 
-// Save Tenant (Add or Edit)
 document.getElementById("saveTenantBtn").addEventListener("click", async () => {
     const id = document.getElementById("tenantId").value;
     const firstName = document.getElementById("tenantFirstName").value.trim();
@@ -144,7 +131,6 @@ document.getElementById("saveTenantBtn").addEventListener("click", async () => {
     }
 });
 
-// Delete Tenant
 window.deleteTenant = async function (id) {
     if (!confirm("Are you sure you want to delete this tenant?")) return;
 
@@ -156,17 +142,48 @@ window.deleteTenant = async function (id) {
     }
 };
 
+// Fetch Billing Records for Selected Tenant
+window.viewBilling = async function (tenantId) {
+    const { data, error } = await supabase.from("billing_record").select("*").eq("tenant_id", tenantId);
+
+    if (error) {
+        console.error("Error fetching billing records:", error);
+        return;
+    }
+
+    const billingTable = document.querySelector("#billingTable");
+    billingTable.innerHTML = "";
+
+    if (data.length === 0) {
+        billingTable.innerHTML = `<tr><td colspan="3" class="text-center text-gray-500">No billing records found.</td></tr>`;
+    } else {
+        data.forEach(record => {
+            billingTable.innerHTML += `
+                <tr>
+                    <td>₱${record.amount}</td>
+                    <td>${new Date(record.due_date).toLocaleDateString()}</td>
+                    <td class="${record.status === 'paid' ? 'text-green-500' : 'text-red-500'}">${record.status}</td>
+                </tr>
+            `;
+        });
+    }
+
+    document.querySelector("#billingModal").classList.remove("hidden");
+};
+
+document.querySelector("#closeBillingModal").addEventListener("click", () => {
+    document.querySelector("#billingModal").classList.add("hidden");
+});
+
 // Search
 document.getElementById("searchBtn").addEventListener("click", () => {
     const searchQuery = document.getElementById("searchInput").value.trim();
     fetchTenants(searchQuery);
 });
 
-// Reset Search Filters
 document.getElementById("resetBtn").addEventListener("click", () => {
     document.getElementById("searchInput").value = "";
     fetchTenants();
 });
 
-// Load Tenants on First Load
 document.addEventListener("DOMContentLoaded", () => fetchTenants(null));

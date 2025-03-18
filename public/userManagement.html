@@ -136,6 +136,24 @@
     </div>
 </div>
 
+<!-- Billing Record Modal -->
+<div id="billingModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
+        <h2 class="text-xl font-bold mb-4">Billing Record</h2>
+        <table class="w-full border">
+            <thead>
+                <tr>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="billingTable"></tbody>
+        </table>
+        <button id="closeBillingModal" class="mt-4 px-4 py-2 bg-red-500 text-white rounded">Close</button>
+    </div>
+</div>
+
 
     <script type="module" src="../js/userManagement.js"></script>
 </body>
