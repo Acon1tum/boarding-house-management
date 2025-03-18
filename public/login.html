@@ -19,6 +19,16 @@
             background-color: transparent !important;
             mix-blend-mode: multiply;
         }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="h-screen flex">
@@ -38,7 +48,15 @@
             
             <form id="loginForm" class="flex flex-col gap-4">
                 <input type="email" id="email" placeholder="Email" required class="p-3 px-4 border rounded-full">
-                <input type="password" id="password" placeholder="Password" required class="p-3 px-4 border rounded-full">
+
+                <!-- Password Input with Toggle -->
+                <div class="password-container">
+                    <input type="password" id="password" placeholder="Password" required class="p-3 px-4 border rounded-full w-full">
+                    <span class="toggle-password">
+                        <span class="iconify" data-icon="mdi:eye-off" id="toggleIcon"></span>
+                    </span>
+                </div>
+
                 <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition-colors">Login</button>
             </form>
             <p class="mt-4 text-center">Don't have an account? 
@@ -51,6 +69,20 @@
     <script>
         document.getElementById("signupRedirect").addEventListener("click", () => {
             window.location.href = "signup.html";
+        });
+
+        // Password Visibility Toggle
+        const passwordInput = document.getElementById("password");
+        const toggleIcon = document.getElementById("toggleIcon");
+
+        document.querySelector(".toggle-password").addEventListener("click", () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleIcon.setAttribute("data-icon", "mdi:eye");
+            } else {
+                passwordInput.type = "password";
+                toggleIcon.setAttribute("data-icon", "mdi:eye-off");
+            }
         });
     </script>
 

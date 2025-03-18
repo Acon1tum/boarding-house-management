@@ -60,7 +60,14 @@
                 <input type="text" id="firstName" placeholder="First Name" required class="p-3 px-4 border rounded-full">
                 <input type="text" id="lastName" placeholder="Last Name" required class="p-3 px-4 border rounded-full">
                 <input type="email" id="email" placeholder="Email" required class="p-3 px-4 border rounded-full">
-                <input type="password" id="password" placeholder="Password" required class="p-3 px-4 border rounded-full">
+                
+                <div class="relative">
+                    <input type="password" id="password" placeholder="Password" required class="p-3 px-4 border rounded-full w-full">
+                    <span id="togglePassword" class="absolute inset-y-0 right-4 flex items-center cursor-pointer">
+                        <span class="iconify" data-icon="mdi:eye-off" id="toggleIcon"></span>
+                    </span>
+                </div>
+                
                 <button type="submit" class="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition-colors">Sign Up</button>
             </form>
             <p class="mt-4 text-center">Already have an account? 
@@ -69,12 +76,23 @@
         </div>
     </div>
 
-    <script type="module" src="../js/signup.js"></script>
+    <script type="module" src="../js/auth.js"></script>
     <script>
         document.getElementById("loginRedirect").addEventListener("click", () => {
             window.location.href = "login.html";
         });
+        
+        document.getElementById("togglePassword").addEventListener("click", () => {
+            const passwordField = document.getElementById("password");
+            const toggleIcon = document.getElementById("toggleIcon");
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleIcon.setAttribute("data-icon", "mdi:eye");
+            } else {
+                passwordField.type = "password";
+                toggleIcon.setAttribute("data-icon", "mdi:eye-off");
+            }
+        });
     </script>
-
 </body>
 </html>
