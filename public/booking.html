@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Booking</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #B3E5FC, #E1F5FE);
+            min-height: 100vh;
+            transition: background 0.3s ease-in-out;
+        }
+    
+        @media (max-width: 768px) {
+            body {
+                background: linear-gradient(to bottom, #81D4FA, #B3E5FC); /* Darker gradient for smaller screens */
+            }
+        }
+    
+        @media (max-width: 480px) {
+            body {
+                background: linear-gradient(to bottom, #4FC3F7, #81D4FA); /* Even darker gradient for mobile screens */
+            }
+        }
+    </style>
+    
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 

@@ -6,6 +6,26 @@
     <title>Sign Up</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script> <!-- Iconify Library -->
+    <style>
+        body {
+            background: linear-gradient(to bottom, #B3E5FC, #E1F5FE);
+            min-height: 100vh;
+            transition: background 0.3s ease-in-out;
+        }
+    
+        @media (max-width: 768px) {
+            body {
+                background: linear-gradient(to bottom, #81D4FA, #B3E5FC); /* Darker gradient for smaller screens */
+            }
+        }
+    
+        @media (max-width: 480px) {
+            body {
+                background: linear-gradient(to bottom, #4FC3F7, #81D4FA); /* Even darker gradient for mobile screens */
+            }
+        }
+    </style>
+    
 </head>
 <body class="h-screen flex flex-col items-center justify-center bg-blue-500 text-white">
 
