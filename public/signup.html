@@ -15,13 +15,13 @@
     
         @media (max-width: 768px) {
             body {
-                background: linear-gradient(to bottom, #81D4FA, #B3E5FC); /* Darker gradient for smaller screens */
+                background: linear-gradient(to bottom, #81D4FA, #B3E5FC);
             }
         }
     
         @media (max-width: 480px) {
             body {
-                background: linear-gradient(to bottom, #4FC3F7, #81D4FA); /* Even darker gradient for mobile screens */
+                background: linear-gradient(to bottom, #4FC3F7, #81D4FA);
             }
         }
 
@@ -29,7 +29,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: transparent;
         }
 
         .logo-image {
@@ -38,31 +37,36 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center bg-blue-500 text-white">
+<body class="h-screen flex">
 
-    <script type="module">
-        import { preventAuthPages } from "../js/auth.js";
-        preventAuthPages(); // Redirect if already logged in
-    </script>
+    <!-- Left Side with Wavy Background -->
+    <div class="hidden md:block w-1/2 h-full bg-cover bg-left" style="background-image: url('/assets/wave.png');"></div>
 
-    <!-- Logo (Copied from Login Page) -->
-    <div class="logo-container w-40 mb-6">
-        <img src="/assets/logo.png" alt="Logo" class="logo-image w-full h-auto">
-    </div>
+    <!-- Right Side with Sign-Up Form -->
+    <div class="w-full md:w-1/2 flex justify-center items-center px-8 md:pr-16">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md text-black">
+            <!-- Logo inside form -->
+            <div class="logo-container w-32 mx-auto mb-4">
+                <img src="/assets/logo.png" alt="Logo" class="logo-image w-full h-auto">
+            </div>
 
-    <div class="bg-white p-8 rounded-lg shadow-lg w-96 text-black">
-        <h2 class="text-2xl font-bold text-center mb-1">Sign Up</h2>
-        <h2 class="text-xl font-semibold text-center text-gray-600 mb-6">(Tenant Only)</h2>
-        <form id="signupForm" class="flex flex-col gap-4">
-            <input type="text" id="firstName" placeholder="First Name" required class="p-2 border rounded">
-            <input type="text" id="lastName" placeholder="Last Name" required class="p-2 border rounded">
-            <input type="email" id="email" placeholder="Email" required class="p-2 border rounded">
-            <input type="password" id="password" placeholder="Password" required class="p-2 border rounded">
-            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Sign Up</button>
-        </form>
-        <p class="mt-4 text-center">Already have an account? 
-            <button id="loginRedirect" class="text-blue-500 hover:underline">Login</button>
-        </p>
+            <!-- Title & Subtitle in One Line -->
+            <div class="flex justify-center items-center gap-2 mb-6">
+                <h2 class="text-2xl font-bold text-center">Sign Up</h2>
+                <h2 class="text-xl font-semibold text-gray-600">(Tenant Only)</h2>
+            </div>        
+
+            <form id="signupForm" class="flex flex-col gap-4">
+                <input type="text" id="firstName" placeholder="First Name" required class="p-3 px-4 border rounded-full">
+                <input type="text" id="lastName" placeholder="Last Name" required class="p-3 px-4 border rounded-full">
+                <input type="email" id="email" placeholder="Email" required class="p-3 px-4 border rounded-full">
+                <input type="password" id="password" placeholder="Password" required class="p-3 px-4 border rounded-full">
+                <button type="submit" class="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition-colors">Sign Up</button>
+            </form>
+            <p class="mt-4 text-center">Already have an account? 
+                <button id="loginRedirect" class="text-blue-500 hover:underline">Login</button>
+            </p>
+        </div>
     </div>
 
     <script type="module" src="../js/signup.js"></script>

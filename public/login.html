@@ -14,7 +14,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: transparent;
         }
         .logo-image {
             background-color: transparent !important;
@@ -22,29 +21,30 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center text-white">
+<body class="h-screen flex">
 
-    <script type="module">
-        import { preventAuthPages } from "../js/auth.js";
-        preventAuthPages(); // Redirect if already logged in
-    </script>
+    <!-- Left Side with Wavy Background -->
+    <div class="hidden md:block w-1/2 h-full bg-cover bg-left" style="background-image: url('/assets/wave.png');"></div>
 
-    <!-- Logo with enhanced transparency handling - increased size from w-24 to w-40 -->
-    <div class="logo-container w-40 mb-6">
-        <img src="/assets/logo.png" alt="Logo" class="logo-image w-full h-auto">
-    </div>
+    <!-- Right Side with Login Form -->
+    <div class="w-full md:w-1/2 flex justify-center items-center px-8 md:pr-16">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md text-black">
+            <!-- Logo inside form -->
+            <div class="logo-container w-32 mx-auto mb-4">
+                <img src="/assets/logo.png" alt="Logo" class="logo-image w-full h-auto">
+            </div>
 
-    <!-- Main Login Card -->
-    <div class="bg-white p-8 rounded-lg shadow-lg w-96 text-black">
-        <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
-        <form id="loginForm" class="flex flex-col gap-4">
-            <input type="email" id="email" placeholder="Email" required class="p-2 border rounded">
-            <input type="password" id="password" placeholder="Password" required class="p-2 border rounded">
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">Login</button>
-        </form>
-        <p class="mt-4 text-center">Don't have an account? 
-            <button id="signupRedirect" class="text-blue-500 hover:underline">Sign Up</button>
-        </p>
+            <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
+            
+            <form id="loginForm" class="flex flex-col gap-4">
+                <input type="email" id="email" placeholder="Email" required class="p-3 px-4 border rounded-full">
+                <input type="password" id="password" placeholder="Password" required class="p-3 px-4 border rounded-full">
+                <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition-colors">Login</button>
+            </form>
+            <p class="mt-4 text-center">Don't have an account? 
+                <button id="signupRedirect" class="text-blue-500 hover:underline">Sign Up</button>
+            </p>
+        </div>
     </div>
 
     <script type="module" src="../js/auth.js"></script>
