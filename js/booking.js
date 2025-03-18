@@ -103,7 +103,7 @@ async function fetchRooms() {
                 .from("bookings")
                 .select("id")
                 .eq("tenant_id", user.id)
-                .eq("status", "approved")
+                .in("status", ["pending", "approved"])
                 .maybeSingle();
 
             if (error) {
@@ -113,10 +113,9 @@ async function fetchRooms() {
             }
 
             if (existingBooking) {
-                alert("You already have an approved booking and cannot book another room.");
+                alert("You already have a pending or approved booking and cannot book another room.");
                 return;
             }
-
             const roomId = e.target.dataset.roomId;
             const roomNumber = e.target.dataset.roomNumber;
             const roomImage = e.target.dataset.roomImage;
