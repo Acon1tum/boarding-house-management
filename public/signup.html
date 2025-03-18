@@ -24,8 +24,19 @@
                 background: linear-gradient(to bottom, #4FC3F7, #81D4FA); /* Even darker gradient for mobile screens */
             }
         }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+        }
+
+        .logo-image {
+            background-color: transparent !important;
+            mix-blend-mode: multiply;
+        }
     </style>
-    
 </head>
 <body class="h-screen flex flex-col items-center justify-center bg-blue-500 text-white">
 
@@ -34,10 +45,9 @@
         preventAuthPages(); // Redirect if already logged in
     </script>
 
-    <!-- Header with House Icon -->
-    <div class="flex items-center gap-2 mb-6">
-        <iconify-icon icon="mdi:home" class="text-white text-4xl"></iconify-icon>
-        <h1 class="text-3xl font-bold">StayMate</h1>
+    <!-- Logo (Copied from Login Page) -->
+    <div class="logo-container w-40 mb-6">
+        <img src="/assets/logo.png" alt="Logo" class="logo-image w-full h-auto">
     </div>
 
     <div class="bg-white p-8 rounded-lg shadow-lg w-96 text-black">
