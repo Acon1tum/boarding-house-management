@@ -280,17 +280,47 @@ function printReceipt(bill) {
 }
 
 
-// Delete a Bill
 async function deleteBill(id) {
     if (!confirm("Are you sure you want to delete this bill?")) return;
 
-    const { error } = await supabase.from("bills").delete().eq("id", id);
-    if (error) {
-        alert("Failed to delete bill: " + error.message);
+    // Fetch the bill before deletion
+    const { data: bill, error: fetchError } = await supabase
+        .from("bills")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+    if (fetchError || !bill) {
+        alert("Error fetching bill details.");
+        return;
+    }
+
+    // Insert the bill into `billing_record` before deleting
+    const { error: insertError } = await supabase
+        .from("billing_record")
+        .insert([{ 
+            tenant_id: bill.tenant_id,
+            amount: bill.amount,
+            due_date: bill.due_date,
+            status: bill.status,
+            payment_date: bill.payment_date
+        }]);
+
+    if (insertError) {
+        alert("Failed to archive bill: " + insertError.message);
+        return;
+    }
+
+    // Delete the bill from `bills`
+    const { error: deleteError } = await supabase.from("bills").delete().eq("id", id);
+
+    if (deleteError) {
+        alert("Failed to delete bill: " + deleteError.message);
     } else {
         fetchAllBills();
     }
 }
+
 
 // Initialize
 document.addEventListener("DOMContentLoaded", fetchAllBills);

@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (user.role !== "tenant") {
         console.warn("Non-tenant user trying to access tenant page, redirecting.");
-        // Redirect non-tenants to their appropriate page
         switch (user.role) {
             case "admin":
                 window.location.href = "admin.html";
@@ -27,25 +26,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     console.log("User authenticated as tenant:", user);
-    fetchBills();  // Proceed to fetch bills for the tenant.
-
-    setInterval(checkDueBills, 60000);  // Check for due bills every minute
+    fetchBills();  
+    fetchBillingHistory(user.id);  // Fetch billing history from `billing_record`
+    setInterval(checkDueBills, 60000);
 });
 
-// Fetch Bills
+// Fetch Bills (Active Bills)
 async function fetchBills() {
-    // Get the logged-in user
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) {
-        console.error("No user found.");
-        return;
-    }
+    if (!user) return;
 
-    // Query the bills table for the logged-in user (tenant_id)
     const { data, error } = await supabase
         .from("bills")
         .select("*")
-        .eq("tenant_id", user.id)  // Use the tenant's user id
+        .eq("tenant_id", user.id)
         .order("due_date", { ascending: true });
 
     if (error) {
@@ -56,34 +50,13 @@ async function fetchBills() {
     const billList = document.getElementById("billListTable");
     billList.innerHTML = "";
 
-    // Check if there are no bills
     if (data.length === 0) {
-        billList.innerHTML = `
-            <tr>
-                <td class="p-3 text-gray-600" colspan="3">No bills found.</td>
-            </tr>
-        `;
+        billList.innerHTML = `<tr><td class="p-3 text-gray-600" colspan="3">No active bills found.</td></tr>`;
         return;
     }
 
-    // Populate the bill list with the user's bills
     data.forEach(bill => {
-        // Determine the color based on bill status
-        let statusClass = '';
-        switch (bill.status) {
-            case 'pending':
-                statusClass = 'bg-yellow-200 text-yellow-800';  // Yellow for pending
-                break;
-            case 'paid':
-                statusClass = 'bg-green-200 text-green-800';   // Green for paid
-                break;
-            case 'overdue':
-                statusClass = 'bg-red-200 text-red-800';       // Red for overdue
-                break;
-            default:
-                statusClass = 'bg-gray-200 text-gray-800';     // Default color if status is unknown
-        }
-
+        let statusClass = getStatusClass(bill.status);
         billList.innerHTML += `
             <tr>
                 <td class="p-3 text-gray-600">₱${bill.amount}</td>
@@ -92,6 +65,58 @@ async function fetchBills() {
             </tr>
         `;
     });
+}
+
+// Fetch Billing History (Archived Bills)
+async function fetchBillingHistory(tenantId) {
+    const { data, error } = await supabase
+        .from("billing_record")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("due_date", { ascending: false });
+
+    if (error) {
+        console.error("Error fetching billing history:", error.message);
+        return;
+    }
+
+    displayBillingHistory(data);
+}
+
+// Display Billing History in Table
+function displayBillingHistory(bills) {
+    const billHistoryTable = document.getElementById("billHistoryTable");
+    billHistoryTable.innerHTML = "";
+
+    if (bills.length === 0) {
+        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600">No billing history found.</td></tr>`;
+        return;
+    }
+
+    bills.forEach(bill => {
+        let statusClass = getStatusClass(bill.status);
+        billHistoryTable.innerHTML += `
+            <tr>
+                <td class="p-3">₱${bill.amount}</td>
+                <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
+                <td class="p-3 ${statusClass}">${bill.status}</td>
+            </tr>
+        `;
+    });
+}
+
+// Utility Function: Get Status Class for Styling
+function getStatusClass(status) {
+    switch (status) {
+        case 'pending':
+            return 'text-yellow-500';  // Yellow for pending
+        case 'paid':
+            return 'text-green-500';   // Green for paid
+        case 'overdue':
+            return 'text-red-500';     // Red for overdue
+        default:
+            return 'text-gray-500';    // Gray for unknown
+    }
 }
 
 // Send Notifications (Simulated)
