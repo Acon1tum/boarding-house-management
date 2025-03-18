@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("User authenticated as tenant:", user);
     fetchRooms(); 
+    fetchPendingBooking(); // Load pending booking on page load
 });
 
 // Fetch Available Rooms with Images, Bedrooms & Capacity
@@ -217,3 +218,61 @@ document.getElementById("filterForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
     fetchRooms();
 });
+
+
+async function fetchPendingBooking() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return;
+
+    // Check if the tenant has a pending booking request
+    const { data: pendingBooking, error } = await supabase
+        .from("bookings")
+        .select("id, room_id")
+        .eq("tenant_id", user.id)
+        .eq("status", "pending")
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error fetching pending booking:", error);
+        return;
+    }
+
+    // Show the cancel button if a pending booking exists
+    const pendingBookingContainer = document.getElementById("pendingBookingContainer");
+    if (pendingBooking) {
+        pendingBookingContainer.innerHTML = `
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+                <p>You have a pending booking request.</p>
+                <button class="bg-red-500 text-white px-4 py-2 rounded mt-2 cancel-pending-btn"
+                    data-booking-id="${pendingBooking.id}">
+                    ❌ Cancel Pending Booking
+                </button>
+            </div>
+        `;
+
+        // Add event listener to the cancel button
+        document.querySelector(".cancel-pending-btn").addEventListener("click", () => {
+            cancelPendingBooking(pendingBooking.id);
+        });
+    } else {
+        pendingBookingContainer.innerHTML = ""; // Hide the section if no pending booking
+    }
+}
+
+async function cancelPendingBooking(bookingId) {
+    if (!confirm("Are you sure you want to cancel your pending booking request?")) return;
+
+    const { error } = await supabase
+        .from("bookings")
+        .delete()
+        .eq("id", bookingId)
+        .eq("status", "pending");  // Ensure only pending bookings are canceled
+
+    if (error) {
+        alert("Failed to cancel pending booking: " + error.message);
+    } else {
+        alert("Your pending booking request has been canceled.");
+        fetchPendingBooking(); // Refresh the pending booking display
+        fetchRooms();  // Refresh the room list
+    }
+}
