@@ -153,15 +153,132 @@ document.getElementById("closeConfirmationBtn").addEventListener("click", () => 
     document.getElementById("confirmationModal").classList.add("hidden");
 });
 
-// Mark a Bill as Paid
 async function markAsPaid(id) {
-    const { error } = await supabase.from("bills").update({ status: "paid" }).eq("id", id);
+    const { data, error } = await supabase
+        .from("bills")
+        .update({ status: "paid" })
+        .eq("id", id);
+    
     if (error) {
         alert("Failed to update bill: " + error.message);
     } else {
-        fetchAllBills();
+        // Fetch bill details along with tenant info
+        const { data: bill, error: fetchError } = await supabase
+            .from("bills")
+            .select("id, tenant_id, amount, due_date, status, users(first_name, last_name)")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !bill) {
+            alert("Error fetching bill details.");
+            return;
+        }
+
+        // Print the receipt with tenant name
+        printReceipt(bill);
+        fetchAllBills();  // Refresh the list
     }
 }
+
+function printReceipt(bill) {
+    const receiptContent = `
+        <html>
+        <head>
+            <title>Payment Receipt</title>
+            <style>
+                @media print {
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                    }
+                    .receipt-container {
+                        box-shadow: none;
+                        border: none;
+                    }
+                }
+
+                body {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    font-family: 'Courier New', monospace;
+                    background-color: #f8f8f8;
+                }
+
+                .receipt-container {
+                    width: 320px;
+                    padding: 20px;
+                    background: white;
+                    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                    border-radius: 5px;
+                    border: 1px solid #ccc;
+                }
+
+                .receipt-header {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+
+                .receipt-details {
+                    text-align: left;
+                    font-size: 14px;
+                }
+
+                .separator {
+                    border-top: 1px dashed #000;
+                    margin: 10px 0;
+                }
+
+                .footer {
+                    margin-top: 10px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    text-align: center;
+                }
+
+                .company-logo {
+                    max-width: 80px;
+                    display: block;
+                    margin: 0 auto 10px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt-container">
+                <img src="https://via.placeholder.com/80" alt="Company Logo" class="company-logo"> 
+                <div class="receipt-header">BOARDING HOUSE RECEIPT</div>
+                <p>Date: ${new Date().toLocaleDateString()}</p>
+
+                <div class="separator"></div>
+
+                <div class="receipt-details">
+                    <p><strong>Receipt No:</strong> ${bill.id}</p>
+                    <p><strong>Tenant Name:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
+                    <p><strong>Amount Paid:</strong> ₱${bill.amount.toFixed(2)}</p>
+                    <p><strong>Due Date:</strong> ${new Date(bill.due_date).toLocaleDateString()}</p>
+                    <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
+                </div>
+
+                <div class="separator"></div>
+
+                <p class="footer">Thank you for your payment!</p>
+                <p class="footer">Need help? Call: (123) 456-7890</p>
+            </div>
+        </body>
+        </html>
+    `;
+
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(receiptContent);
+    newWindow.document.close();
+    newWindow.print();
+}
+
 
 // Delete a Bill
 async function deleteBill(id) {
