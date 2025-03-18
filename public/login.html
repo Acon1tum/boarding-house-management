@@ -6,26 +6,41 @@
     <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script> <!-- Iconify Library -->
+    <style>
+        body {
+            background: linear-gradient(to bottom, #B3E5FC, #E1F5FE);
+        }
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+        }
+        .logo-image {
+            background-color: transparent !important;
+            mix-blend-mode: multiply;
+        }
+    </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center bg-blue-500 text-white">
+<body class="h-screen flex flex-col items-center justify-center text-white">
 
     <script type="module">
         import { preventAuthPages } from "../js/auth.js";
         preventAuthPages(); // Redirect if already logged in
     </script>
 
-    <!-- Header with House Icon -->
-    <div class="flex items-center gap-2 mb-6">
-        <iconify-icon icon="mdi:home" class="text-white text-4xl"></iconify-icon>
-        <h1 class="text-3xl font-bold">StayMate</h1>
+    <!-- Logo with enhanced transparency handling - increased size from w-24 to w-40 -->
+    <div class="logo-container w-40 mb-6">
+        <img src="/assets/logo.png" alt="Logo" class="logo-image w-full h-auto">
     </div>
 
+    <!-- Main Login Card -->
     <div class="bg-white p-8 rounded-lg shadow-lg w-96 text-black">
         <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
         <form id="loginForm" class="flex flex-col gap-4">
             <input type="email" id="email" placeholder="Email" required class="p-2 border rounded">
             <input type="password" id="password" placeholder="Password" required class="p-2 border rounded">
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Login</button>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">Login</button>
         </form>
         <p class="mt-4 text-center">Don't have an account? 
             <button id="signupRedirect" class="text-blue-500 hover:underline">Sign Up</button>

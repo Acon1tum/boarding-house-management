@@ -2,7 +2,10 @@
 <nav class="bg-blue-500 text-white p-4 flex flex-wrap items-center justify-between">
     <!-- Logo -->
     <a href="landlordDashboard.html" class="text-lg font-bold flex items-center gap-2">
-        🏠 StayMate
+        <div class="logo-container h-8">
+            <img src="/assets/logo.png" alt="StayMate Logo" class="logo-image h-full w-auto">
+        </div>
+        StayMate
     </a>
 
     <!-- Navigation Links (Responsive) -->
@@ -31,6 +34,18 @@
         Logout
     </button>
 </nav>
+
+<style>
+    .logo-container {
+        display: flex;
+        align-items: center;
+        background: transparent;
+    }
+    .logo-image {
+        background-color: transparent !important;
+        mix-blend-mode: multiply;
+    }
+</style>
 
 <script>
     document.getElementById("logoutBtn").addEventListener("click", () => {
