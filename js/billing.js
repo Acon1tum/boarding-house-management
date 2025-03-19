@@ -80,8 +80,28 @@ async function fetchBillingHistory(tenantId) {
         return;
     }
 
+    // Store original data globally for filtering
+    window.billingData = data;
     displayBillingHistory(data);
 }
+document.getElementById("monthFilter").addEventListener("change", function () {
+    const selectedMonth = this.value;
+    filterBillingHistory(selectedMonth);
+});
+
+function filterBillingHistory(month) {
+    let filteredData = window.billingData;
+
+    if (month !== "all") {
+        filteredData = window.billingData.filter(bill => {
+            const billMonth = new Date(bill.due_date).getMonth() + 1; // JavaScript months are 0-based
+            return billMonth == month;
+        });
+    }
+
+    displayBillingHistory(filteredData);
+}
+
 
 // Display Billing History in Table
 function displayBillingHistory(bills) {
@@ -89,7 +109,7 @@ function displayBillingHistory(bills) {
     billHistoryTable.innerHTML = "";
 
     if (bills.length === 0) {
-        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600">No billing history found.</td></tr>`;
+        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600">No billing history found for this month.</td></tr>`;
         return;
     }
 
@@ -104,6 +124,7 @@ function displayBillingHistory(bills) {
         `;
     });
 }
+
 
 // Utility Function: Get Status Class for Styling
 function getStatusClass(status) {
