@@ -1,8 +1,9 @@
 import { supabase } from "../db/supabase.js";
+import { getUserDetails } from "./auth.js";
 
 // Ensure that only tenants can access the bills page
 document.addEventListener("DOMContentLoaded", () => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     
     if (!user) {
         console.warn("No user found, redirecting to login.");
@@ -27,89 +28,112 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("User authenticated as tenant:", user);
     fetchBills();  
-    fetchBillingHistory(user.id);  // Fetch billing history from `billing_record`
+    fetchBillingHistory(user.id);  // Fetch billing history
     setInterval(checkDueBills, 60000);
 });
 
 // Fetch Bills (Active Bills)
 async function fetchBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return;
+    try {
+        const user = getUserDetails();
+        if (!user) {
+            console.warn("No user found in fetchBills");
+            return;
+        }
 
-    const { data, error } = await supabase
-        .from("bills")
-        .select("*")
-        .eq("tenant_id", user.id)
-        .order("due_date", { ascending: true });
+        const { data, error } = await supabase
+            .from("bills")
+            .select("*")
+            .eq("tenant_id", user.id)
+            .order("due_date", { ascending: true });
 
-    if (error) {
-        console.error("Error fetching bills:", error.message);
-        return;
+        if (error) {
+            console.error("Error fetching bills:", error.message);
+            const billList = document.getElementById("billListTable");
+            if (billList) {
+                billList.innerHTML = `<tr><td class="p-3 text-red-500 text-center" colspan="3">Error loading bills. Please try again later.</td></tr>`;
+            }
+            return;
+        }
+
+        const billList = document.getElementById("billListTable");
+        
+        // Check if the element exists before trying to set its innerHTML
+        if (!billList) {
+            console.warn("Element with ID 'billListTable' not found in the DOM");
+            return;
+        }
+        
+        billList.innerHTML = "";
+
+        if (!data || data.length === 0) {
+            billList.innerHTML = `<tr><td class="p-3 text-gray-600 text-center" colspan="3">No active bills found.</td></tr>`;
+            return;
+        }
+
+        data.forEach(bill => {
+            let statusClass = getStatusClass(bill.status);
+            billList.innerHTML += `
+                <tr>
+                    <td class="p-3 text-gray-600">₱${bill.amount}</td>
+                    <td class="p-3 text-gray-600">${new Date(bill.due_date).toDateString()}</td>
+                    <td class="p-3 ${statusClass}">${bill.status}</td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Unexpected error in fetchBills:", error);
+        const billList = document.getElementById("billListTable");
+        if (billList) {
+            billList.innerHTML = `<tr><td class="p-3 text-red-500 text-center" colspan="3">An unexpected error occurred. Please try again later.</td></tr>`;
+        }
     }
-
-    const billList = document.getElementById("billListTable");
-    billList.innerHTML = "";
-
-    if (data.length === 0) {
-        billList.innerHTML = `<tr><td class="p-3 text-gray-600" colspan="3">No active bills found.</td></tr>`;
-        return;
-    }
-
-    data.forEach(bill => {
-        let statusClass = getStatusClass(bill.status);
-        billList.innerHTML += `
-            <tr>
-                <td class="p-3 text-gray-600">₱${bill.amount}</td>
-                <td class="p-3 text-gray-600">${new Date(bill.due_date).toDateString()}</td>
-                <td class="p-3 ${statusClass}">${bill.status}</td>
-            </tr>
-        `;
-    });
 }
 
 // Fetch Billing History (Archived Bills)
 async function fetchBillingHistory(tenantId) {
-    const { data, error } = await supabase
-        .from("billing_record")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .order("due_date", { ascending: false });
+    try {
+        const { data, error } = await supabase
+            .from("billing_record")
+            .select("*")
+            .eq("tenant_id", tenantId)
+            .order("due_date", { ascending: false });
 
-    if (error) {
-        console.error("Error fetching billing history:", error.message);
-        return;
+        if (error) {
+            console.error("Error fetching billing history:", error.message);
+            const billHistoryTable = document.getElementById("billHistoryTable");
+            if (billHistoryTable) {
+                billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-red-500 text-center">Error loading billing history. Please try again later.</td></tr>`;
+            }
+            return;
+        }
+
+        // Store original data globally for filtering
+        window.billingData = data || [];
+        displayBillingHistory(data || []);
+    } catch (error) {
+        console.error("Unexpected error in fetchBillingHistory:", error);
+        const billHistoryTable = document.getElementById("billHistoryTable");
+        if (billHistoryTable) {
+            billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-red-500 text-center">An unexpected error occurred. Please try again later.</td></tr>`;
+        }
     }
-
-    // Store original data globally for filtering
-    window.billingData = data;
-    displayBillingHistory(data);
 }
-document.getElementById("monthFilter").addEventListener("change", function () {
-    const selectedMonth = this.value;
-    filterBillingHistory(selectedMonth);
-});
-
-function filterBillingHistory(month) {
-    let filteredData = window.billingData;
-
-    if (month !== "all") {
-        filteredData = window.billingData.filter(bill => {
-            const billMonth = new Date(bill.due_date).getMonth() + 1; // JavaScript months are 0-based
-            return billMonth == month;
-        });
-    }
-
-    displayBillingHistory(filteredData);
-}
-
 
 // Display Billing History in Table
 function displayBillingHistory(bills) {
     const billHistoryTable = document.getElementById("billHistoryTable");
+    
+    // Check if the element exists before trying to set its innerHTML
+    if (!billHistoryTable) {
+        console.warn("Element with ID 'billHistoryTable' not found in the DOM");
+        return;
+    }
+    
     billHistoryTable.innerHTML = "";
 
-    if (bills.length === 0) {
-        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600">No billing history found for this month.</td></tr>`;
+    if (!bills || bills.length === 0) {
+        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600 text-center">No billing history found.</td></tr>`;
         return;
     }
 
@@ -124,7 +148,6 @@ function displayBillingHistory(bills) {
         `;
     });
 }
-
 
 // Utility Function: Get Status Class for Styling
 function getStatusClass(status) {
@@ -147,7 +170,7 @@ function sendNotification(message) {
 
 // Notify Due Bills
 async function checkDueBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     if (!user) return;
 
     const { data, error } = await supabase

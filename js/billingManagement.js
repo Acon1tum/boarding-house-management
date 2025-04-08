@@ -1,9 +1,10 @@
 // js/billingManagement.js
 import { supabase } from "../db/supabase.js";
+import { getUserDetails } from "./auth.js";
 
 // Fetch All Bills
 async function fetchAllBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     if (!user || user.role !== "landlord") return;
 
     const { data, error } = await supabase
@@ -30,7 +31,7 @@ async function fetchAllBills() {
     billListTable.innerHTML = data.map(bill => `
         <tr class="border-b">
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
-            <td class="p-3">${bill.amount}</td>
+            <td class="p-3">₱${bill.amount}</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
             <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : "text-green-500"}">
                 ${bill.status}
@@ -57,7 +58,7 @@ async function fetchAllBills() {
 
 // Generate Bills for Tenants with Approved Bookings
 async function generateBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     if (!user || user.role !== "landlord") return;
 
     // Fetch all active tenancies
@@ -136,7 +137,7 @@ function attachEventListeners() {
 
 // Open Confirmation Modal for Mark as Paid
 function openConfirmationModal(billId, amount) {
-    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>${amount}</strong> as paid?`;
+    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>₱${amount}</strong> as paid?`;
     document.getElementById("confirmMarkPaidBtn").setAttribute("data-id", billId);
     document.getElementById("confirmationModal").classList.remove("hidden");
 }
@@ -154,15 +155,8 @@ document.getElementById("closeConfirmationBtn").addEventListener("click", () => 
 });
 
 async function markAsPaid(id) {
-    const { data, error } = await supabase
-        .from("bills")
-        .update({ status: "paid" })
-        .eq("id", id);
-    
-    if (error) {
-        alert("Failed to update bill: " + error.message);
-    } else {
-        // Fetch bill details along with tenant info
+    try {
+        // Fetch bill details before updating
         const { data: bill, error: fetchError } = await supabase
             .from("bills")
             .select("id, tenant_id, amount, due_date, status, users(first_name, last_name)")
@@ -170,13 +164,50 @@ async function markAsPaid(id) {
             .single();
 
         if (fetchError || !bill) {
-            alert("Error fetching bill details.");
-            return;
+            throw new Error("Error fetching bill details");
+        }
+
+        // Start a transaction by using a single update operation
+        const { error: updateError } = await supabase
+            .from("bills")
+            .update({ status: "paid" })
+            .eq("id", id);
+        
+        if (updateError) {
+            throw new Error("Error updating bill status");
+        }
+
+        // Add to billing_record with better error handling
+        const { data: recordData, error: recordError } = await supabase
+            .from("billing_record")
+            .insert([{
+                tenant_id: bill.tenant_id,
+                amount: bill.amount,
+                due_date: bill.due_date,
+                status: "paid",
+                payment_date: new Date().toISOString(),
+                bill_id: id // Add reference to original bill
+            }])
+            .select();
+
+        if (recordError) {
+            console.error("Error adding to billing record:", recordError);
+            // We'll still continue but log the error
+        } else {
+            console.log("Successfully added to billing record:", recordData);
         }
 
         // Print the receipt with tenant name
         printReceipt(bill);
-        fetchAllBills();  // Refresh the list
+        
+        // Refresh the list
+        fetchAllBills();
+        
+        // Show success message
+        alert("Bill marked as paid successfully!");
+    } catch (error) {
+        console.error("Error marking bill as paid:", error);
+        alert("Failed to update bill: " + error.message);
     }
 }
 
@@ -250,77 +281,57 @@ function printReceipt(bill) {
         </head>
         <body>
             <div class="receipt-container">
-                <img src="https://via.placeholder.com/80" alt="Company Logo" class="company-logo"> 
-                <div class="receipt-header">BOARDING HOUSE RECEIPT</div>
-                <p>Date: ${new Date().toLocaleDateString()}</p>
-
+                <div class="receipt-header">BOARDING HOUSE MANAGEMENT</div>
                 <div class="separator"></div>
-
                 <div class="receipt-details">
                     <p><strong>Receipt No:</strong> ${bill.id}</p>
-                    <p><strong>Tenant Name:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
-                    <p><strong>Amount Paid:</strong> ₱${bill.amount.toFixed(2)}</p>
+                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p><strong>Tenant:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
+                    <p><strong>Amount:</strong> ₱${bill.amount}</p>
                     <p><strong>Due Date:</strong> ${new Date(bill.due_date).toLocaleDateString()}</p>
-                    <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
+                    <p><strong>Status:</strong> PAID</p>
                 </div>
-
                 <div class="separator"></div>
-
-                <p class="footer">Thank you for your payment!</p>
-                <p class="footer">Need help? Call: (123) 456-7890</p>
+                <div class="footer">
+                    <p>Thank you for your payment!</p>
+                </div>
             </div>
         </body>
         </html>
     `;
 
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(receiptContent);
-    newWindow.document.close();
-    newWindow.print();
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(receiptContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
 }
-
 
 async function deleteBill(id) {
-    if (!confirm("Are you sure you want to delete this bill?")) return;
-
-    // Fetch the bill before deletion
-    const { data: bill, error: fetchError } = await supabase
-        .from("bills")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (fetchError || !bill) {
-        alert("Error fetching bill details.");
+    if (!confirm("Are you sure you want to delete this bill?")) {
         return;
     }
 
-    // Insert the bill into `billing_record` before deleting
-    const { error: insertError } = await supabase
-        .from("billing_record")
-        .insert([{ 
-            tenant_id: bill.tenant_id,
-            amount: bill.amount,
-            due_date: bill.due_date,
-            status: bill.status,
-            payment_date: bill.payment_date
-        }]);
+    try {
+        const { error } = await supabase
+            .from("bills")
+            .delete()
+            .eq("id", id);
 
-    if (insertError) {
-        alert("Failed to archive bill: " + insertError.message);
-        return;
-    }
+        if (error) {
+            throw new Error("Error deleting bill");
+        }
 
-    // Delete the bill from `bills`
-    const { error: deleteError } = await supabase.from("bills").delete().eq("id", id);
-
-    if (deleteError) {
-        alert("Failed to delete bill: " + deleteError.message);
-    } else {
+        alert("Bill deleted successfully!");
         fetchAllBills();
+    } catch (error) {
+        console.error("Error deleting bill:", error);
+        alert("Failed to delete bill: " + error.message);
     }
 }
-
 
 // Initialize
 document.addEventListener("DOMContentLoaded", fetchAllBills);

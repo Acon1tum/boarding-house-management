@@ -46,27 +46,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Handle form submission
     document.getElementById("cancelRoomForm").addEventListener("submit", async (e) => {
         e.preventDefault();
+        
+        // Show confirmation modal
+        document.getElementById("confirmModal").classList.remove("hidden");
+        
+        // Handle confirmation
+        document.getElementById("confirmYes").onclick = async () => {
+            try {
+                // Create cancellation request
+                const { error: insertError } = await supabase
+                    .from("cancellation_requests")
+                    .insert([{ 
+                        tenant_id: user.id, 
+                        room_id: tenancies[0].room_id,
+                        request_date: new Date().toISOString(),
+                        status: "pending"
+                    }]);
 
-        try {
-            // Create cancellation request
-            const { error: insertError } = await supabase
-                .from("cancellation_requests")
-                .insert([{ 
-                    tenant_id: user.id, 
-                    room_id: tenancies[0].room_id,
-                    request_date: new Date().toISOString(),
-                    status: "pending"
-                }]);
+                if (insertError) {
+                    throw new Error(insertError.message);
+                }
 
-            if (insertError) {
-                throw new Error(insertError.message);
+                alert("Cancellation request submitted successfully!");
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                console.error("Error submitting cancellation request:", error);
+                alert("Failed to submit cancellation request: " + error.message);
+            } finally {
+                // Hide modal
+                document.getElementById("confirmModal").classList.add("hidden");
             }
-
-            alert("Cancellation request submitted successfully!");
-            window.location.href = "dashboard.html";
-        } catch (error) {
-            console.error("Error submitting cancellation request:", error);
-            alert("Failed to submit cancellation request: " + error.message);
-        }
+        };
     });
 });
