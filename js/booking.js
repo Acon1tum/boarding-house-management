@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("User authenticated as tenant:", user);
     fetchRooms(); 
-    fetchPendingBooking(); // Load pending booking on page load
+    fetchPendingBooking();
 });
 
 // Fetch Available Rooms with Images, Bedrooms & Capacity
@@ -43,8 +43,7 @@ async function fetchRooms() {
         .gte("price", minPrice)
         .lte("price", maxPrice)
         .gte("bedrooms", minBedrooms)
-        .gte("capacity", minCapacity)
-        .eq("status", "available");
+        .gte("capacity", minCapacity);
 
     const { data, error } = await query;
     if (error) {
@@ -70,8 +69,23 @@ async function fetchRooms() {
         noRoomsMessage.classList.add("hidden");
     }
 
+    // Get current occupancy for each room
+    const { data: occupancyData, error: occupancyError } = await supabase
+        .from("room_tenants")
+        .select("room_id")
+        .is("end_date", null);
+
+    const occupancyMap = {};
+    if (!occupancyError) {
+        occupancyData.forEach(item => {
+            occupancyMap[item.room_id] = (occupancyMap[item.room_id] || 0) + 1;
+        });
+    }
+
     data.forEach(room => {
-        const imageSrc = room.image_base64 ? room.image_base64 : "default-room.jpg"; // Use default if no image
+        const currentOccupants = occupancyMap[room.id] || 0;
+        const isAvailable = currentOccupants < room.capacity;
+        const imageSrc = room.image_base64 ? room.image_base64 : "default-room.jpg";
 
         roomList.innerHTML += `
             <div class="p-4 border rounded-lg bg-white shadow-lg">
@@ -80,18 +94,20 @@ async function fetchRooms() {
                 <p class="text-gray-600">Price: ₱${room.price}/month</p>
                 <p class="text-gray-600">Bedrooms: ${room.bedrooms}</p>
                 <p class="text-gray-600">Capacity: ${room.capacity} people</p>
-                <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn hover:bg-green-600 transition"
+                <p class="text-gray-600">Current Occupants: ${currentOccupants}</p>
+                <button class="bg-green-500 text-white px-4 py-2 mt-2 rounded book-btn hover:bg-green-600 transition ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}"
                     data-room-id="${room.id}" 
                     data-room-number="${room.room_number}"
-                    data-room-image="${imageSrc}">
-                    Book Now
+                    data-room-image="${imageSrc}"
+                    ${!isAvailable ? 'disabled' : ''}>
+                    ${isAvailable ? 'Book Now' : 'Room Full'}
                 </button>
             </div>
         `;
     });
 
     // Attach event listeners to each "Book Now" button
-    document.querySelectorAll(".book-btn").forEach(button => {
+    document.querySelectorAll(".book-btn:not([disabled])").forEach(button => {
         button.addEventListener("click", async (e) => {
             const user = JSON.parse(localStorage.getItem("user"));
             if (!user) {
@@ -99,29 +115,62 @@ async function fetchRooms() {
                 return;
             }
 
-            // Check if the tenant already has an approved booking
-            const { data: existingBooking, error } = await supabase
-                .from("bookings")
-                .select("id")
-                .eq("tenant_id", user.id)
-                .in("status", ["pending", "approved"])
-                .maybeSingle();
-
-            if (error) {
-                console.error("Error checking existing booking:", error);
-                alert("Error checking existing bookings. Please try again.");
-                return;
-            }
-
-            if (existingBooking) {
-                alert("You already have a pending or approved booking and cannot book another room.");
-                return;
-            }
             const roomId = e.target.dataset.roomId;
             const roomNumber = e.target.dataset.roomNumber;
             const roomImage = e.target.dataset.roomImage;
 
-            openBookingModal(roomId, roomNumber, roomImage);
+            try {
+                // Check if the tenant already has an active booking for this room
+                const { data: existingTenancy, error: tenancyError } = await supabase
+                    .from("room_tenants")
+                    .select("*")
+                    .eq("tenant_id", user.id)
+                    .eq("room_id", roomId)
+                    .is("end_date", null)
+                    .maybeSingle();
+
+                if (tenancyError) {
+                    throw new Error("Error checking existing tenancy");
+                }
+
+                if (existingTenancy) {
+                    alert("You already have an active booking for this room.");
+                    return;
+                }
+
+                // Check room capacity
+                const { data: room, error: roomError } = await supabase
+                    .from("rooms")
+                    .select("capacity")
+                    .eq("id", roomId)
+                    .single();
+
+                if (roomError) {
+                    throw new Error("Error checking room capacity");
+                }
+
+                // Get current number of tenants in the room
+                const { count: currentOccupants, error: countError } = await supabase
+                    .from("room_tenants")
+                    .select("*", { count: 'exact' })
+                    .eq("room_id", roomId)
+                    .is("end_date", null);
+
+                if (countError) {
+                    throw new Error("Error checking room occupancy");
+                }
+
+                if (currentOccupants >= room.capacity) {
+                    alert("This room has reached maximum capacity.");
+                    fetchRooms(); // Refresh the room list
+                    return;
+                }
+
+                openBookingModal(roomId, roomNumber, roomImage);
+            } catch (error) {
+                console.error("Booking error:", error);
+                alert("Error processing booking. Please try again.");
+            }
         });
     });
 }
@@ -150,7 +199,7 @@ document.getElementById("closeModalBtn").addEventListener("click", () => {
 // Confirm Booking
 document.getElementById("confirmBookingBtn").addEventListener("click", async function () {
     const roomId = this.getAttribute("data-room-id");
-    bookRoom(roomId);
+    await bookRoom(roomId);
 });
 
 // Book a Room
@@ -161,55 +210,70 @@ async function bookRoom(roomId) {
         return;
     }
 
-    // Double-check the tenant does not already have an approved booking
-    const { data: existingBooking, error: bookingError } = await supabase
-        .from("bookings")
-        .select("id")
-        .eq("tenant_id", user.id)
-        .eq("status", "approved")
-        .maybeSingle();
+    try {
+        // Double-check the tenant does not already have an active booking for this room
+        const { data: existingTenancy, error: tenancyError } = await supabase
+            .from("room_tenants")
+            .select("*")
+            .eq("tenant_id", user.id)
+            .eq("room_id", roomId)
+            .is("end_date", null)
+            .maybeSingle();
 
-    if (bookingError) {
-        alert("Error checking existing bookings. Please try again.");
-        return;
-    }
+        if (tenancyError) {
+            throw new Error("Error verifying tenancy");
+        }
 
-    if (existingBooking) {
-        alert("You already have an approved booking and cannot book another room.");
+        if (existingTenancy) {
+            alert("You already have an active booking for this room.");
+            document.getElementById("bookingModal").classList.add("hidden");
+            return;
+        }
+
+        // Check if there's already a pending booking request for this room
+        const { data: existingRequest, error: requestError } = await supabase
+            .from("booking_requests")
+            .select("*")
+            .eq("tenant_id", user.id)
+            .eq("room_id", roomId)
+            .eq("status", "pending")
+            .maybeSingle();
+
+        if (requestError) {
+            throw new Error("Error checking existing requests");
+        }
+
+        if (existingRequest) {
+            alert("You already have a pending booking request for this room.");
+            document.getElementById("bookingModal").classList.add("hidden");
+            return;
+        }
+
+        // Create a new booking request
+        const { data: bookingRequest, error: createError } = await supabase
+            .from("booking_requests")
+            .insert([
+                {
+                    tenant_id: user.id,
+                    room_id: roomId,
+                    status: "pending",
+                    request_date: new Date().toISOString()
+                }
+            ])
+            .select()
+            .single();
+
+        if (createError) {
+            throw new Error("Error creating booking request");
+        }
+
+        alert("Booking request submitted successfully! Please wait for landlord approval.");
         document.getElementById("bookingModal").classList.add("hidden");
-        return;
-    }
+        fetchPendingBooking(); // Refresh the pending bookings list
 
-    // Verify room is still available before booking
-    const { data: roomData, error: roomError } = await supabase
-        .from("rooms")
-        .select("status")
-        .eq("id", roomId)
-        .single();
-
-    if (roomError) {
-        alert("Error checking room status: " + roomError.message);
-        return;
-    }
-
-    if (roomData.status !== "available") {
-        alert("This room is no longer available.");
-        document.getElementById("bookingModal").classList.add("hidden");
-        fetchRooms(); // Refresh the room list
-        return;
-    }
-
-    // Insert new booking request
-    const { error } = await supabase
-        .from("bookings")
-        .insert([{ tenant_id: user.id, room_id: roomId, start_date: new Date(), status: "pending" }]);
-
-    if (error) {
-        alert("Booking failed: " + error.message);
-    } else {
-        alert("Booking request sent!");
-        document.getElementById("bookingModal").classList.add("hidden");
-        fetchRooms();
+    } catch (error) {
+        console.error("Booking request error:", error);
+        alert("Error submitting booking request. Please try again.");
     }
 }
 
@@ -219,60 +283,100 @@ document.getElementById("filterForm")?.addEventListener("submit", (e) => {
     fetchRooms();
 });
 
-
+// Fetch and display pending booking requests
 async function fetchPendingBooking() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return;
 
-    // Check if the tenant has a pending booking request
-    const { data: pendingBooking, error } = await supabase
-        .from("bookings")
-        .select("id, room_id")
-        .eq("tenant_id", user.id)
-        .eq("status", "pending")
-        .maybeSingle();
+    try {
+        const { data: requests, error } = await supabase
+            .from("booking_requests")
+            .select(`
+                id,
+                request_date,
+                status,
+                rooms (
+                    room_number
+                )
+            `)
+            .eq("tenant_id", user.id)
+            .order('request_date', { ascending: false });
 
-    if (error) {
-        console.error("Error fetching pending booking:", error);
-        return;
-    }
+        if (error) {
+            throw new Error("Error fetching booking requests");
+        }
 
-    // Show the cancel button if a pending booking exists
-    const pendingBookingContainer = document.getElementById("pendingBookingContainer");
-    if (pendingBooking) {
-        pendingBookingContainer.innerHTML = `
-            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-                <p>You have a pending booking request.</p>
-                <button class="bg-red-500 text-white px-4 py-2 rounded mt-2 cancel-pending-btn"
-                    data-booking-id="${pendingBooking.id}">
-                    ❌ Cancel Pending Booking
-                </button>
-            </div>
-        `;
+        const pendingRequestsTable = document.getElementById("pendingRequestsTable");
+        if (!pendingRequestsTable) return;
 
-        // Add event listener to the cancel button
-        document.querySelector(".cancel-pending-btn").addEventListener("click", () => {
-            cancelPendingBooking(pendingBooking.id);
-        });
-    } else {
-        pendingBookingContainer.innerHTML = ""; // Hide the section if no pending booking
+        if (!requests || requests.length === 0) {
+            pendingRequestsTable.innerHTML = `
+                <tr>
+                    <td colspan="4" class="p-3 text-gray-600 text-center">No booking requests found.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        pendingRequestsTable.innerHTML = requests.map(request => {
+            const roomNumber = request.rooms ? request.rooms.room_number : "N/A";
+            let statusColorClass = "text-yellow-500";
+            if (request.status === "approved") {
+                statusColorClass = "text-green-500 font-semibold";
+            } else if (request.status === "rejected") {
+                statusColorClass = "text-red-500 font-semibold";
+            }
+
+            const cancelButton = request.status === "pending" 
+                ? `<button onclick="cancelRequest('${request.id}')" 
+                    class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                    Cancel Request
+                </button>`
+                : '';
+
+            return `
+                <tr class="border-b">
+                    <td class="p-3">${roomNumber}</td>
+                    <td class="p-3">${new Date(request.request_date).toLocaleDateString()}</td>
+                    <td class="p-3 ${statusColorClass}">${request.status}</td>
+                    <td class="p-3">${cancelButton}</td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (error) {
+        console.error("Error fetching pending bookings:", error);
+        const pendingRequestsTable = document.getElementById("pendingRequestsTable");
+        if (pendingRequestsTable) {
+            pendingRequestsTable.innerHTML = `
+                <tr>
+                    <td colspan="4" class="p-3 text-red-500 text-center">Error loading booking requests.</td>
+                </tr>
+            `;
+        }
     }
 }
 
-async function cancelPendingBooking(bookingId) {
-    if (!confirm("Are you sure you want to cancel your pending booking request?")) return;
+// Cancel Booking Request
+async function cancelRequest(requestId) {
+    try {
+        const { error } = await supabase
+            .from("booking_requests")
+            .delete()
+            .eq("id", requestId);
 
-    const { error } = await supabase
-        .from("bookings")
-        .delete()
-        .eq("id", bookingId)
-        .eq("status", "pending");  // Ensure only pending bookings are canceled
+        if (error) {
+            throw new Error("Error canceling booking request");
+        }
 
-    if (error) {
-        alert("Failed to cancel pending booking: " + error.message);
-    } else {
-        alert("Your pending booking request has been canceled.");
-        fetchPendingBooking(); // Refresh the pending booking display
-        fetchRooms();  // Refresh the room list
+        alert("Booking request canceled successfully!");
+        fetchPendingBooking(); // Refresh the list
+
+    } catch (error) {
+        console.error("Error canceling request:", error);
+        alert("Error canceling booking request. Please try again.");
     }
 }
+
+// Make cancelRequest available globally
+window.cancelRequest = cancelRequest;

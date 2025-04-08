@@ -138,19 +138,57 @@
 
 <!-- Billing Record Modal -->
 <div id="billingModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
-        <h2 class="text-xl font-bold mb-4">Billing Record</h2>
-        <table class="w-full border">
-            <thead>
-                <tr>
-                    <th>Amount</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="billingTable"></tbody>
-        </table>
-        <button id="closeBillingModal" class="mt-4 px-4 py-2 bg-red-500 text-white rounded">Close</button>
+    <div class="bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-[80vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="billingModalTitle" class="text-xl font-bold">Billing Record</h2>
+            <button id="closeBillingModal" class="text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Active Bills Section -->
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Active Bills</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 text-left border">Amount</th>
+                            <th class="p-2 text-left border">Due Date</th>
+                            <th class="p-2 text-left border">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activeBillsTable" class="bg-white divide-y divide-gray-300">
+                        <tr>
+                            <td colspan="3" class="p-2 text-center text-gray-500">Loading active bills...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Billing History Section -->
+        <div>
+            <h3 class="text-lg font-semibold mb-2">Billing History</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 text-left border">Amount</th>
+                            <th class="p-2 text-left border">Due Date</th>
+                            <th class="p-2 text-left border">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billingHistoryTable" class="bg-white divide-y divide-gray-300">
+                        <tr>
+                            <td colspan="3" class="p-2 text-center text-gray-500">Loading billing history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 

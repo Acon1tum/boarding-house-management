@@ -144,31 +144,94 @@ window.deleteTenant = async function (id) {
 
 // Fetch Billing Records for Selected Tenant
 window.viewBilling = async function (tenantId) {
-    const { data, error } = await supabase.from("billing_record").select("*").eq("tenant_id", tenantId);
+    try {
+        // Fetch tenant details
+        const { data: tenantData, error: tenantError } = await supabase
+            .from("users")
+            .select("first_name, last_name, email")
+            .eq("id", tenantId)
+            .single();
 
-    if (error) {
-        console.error("Error fetching billing records:", error);
-        return;
+        if (tenantError) {
+            console.error("Error fetching tenant details:", tenantError);
+            alert("Failed to load tenant details");
+            return;
+        }
+
+        // Fetch active bills
+        const { data: activeBills, error: activeBillsError } = await supabase
+            .from("bills")
+            .select("*")
+            .eq("tenant_id", tenantId)
+            .order("due_date", { ascending: true });
+
+        if (activeBillsError) {
+            console.error("Error fetching active bills:", activeBillsError);
+        }
+
+        // Fetch billing history
+        const { data: billingHistory, error: billingHistoryError } = await supabase
+            .from("billing_record")
+            .select("*")
+            .eq("tenant_id", tenantId)
+            .order("due_date", { ascending: false });
+
+        if (billingHistoryError) {
+            console.error("Error fetching billing history:", billingHistoryError);
+        }
+
+        // Update modal title with tenant name
+        document.querySelector("#billingModalTitle").textContent = `Billing Record - ${tenantData.first_name} ${tenantData.last_name}`;
+
+        // Display active bills
+        const activeBillsTable = document.querySelector("#activeBillsTable");
+        activeBillsTable.innerHTML = "";
+
+        if (!activeBills || activeBills.length === 0) {
+            activeBillsTable.innerHTML = `<tr><td colspan="3" class="text-center text-gray-500">No active bills found.</td></tr>`;
+        } else {
+            activeBills.forEach(bill => {
+                let statusClass = bill.status === "pending" ? "text-yellow-500" : 
+                                 bill.status === "paid" ? "text-green-500" : 
+                                 bill.status === "overdue" ? "text-red-500" : "text-gray-500";
+                
+                activeBillsTable.innerHTML += `
+                    <tr>
+                        <td class="p-2">₱${bill.amount}</td>
+                        <td class="p-2">${new Date(bill.due_date).toLocaleDateString()}</td>
+                        <td class="p-2 ${statusClass}">${bill.status}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Display billing history
+        const billingHistoryTable = document.querySelector("#billingHistoryTable");
+        billingHistoryTable.innerHTML = "";
+
+        if (!billingHistory || billingHistory.length === 0) {
+            billingHistoryTable.innerHTML = `<tr><td colspan="3" class="text-center text-gray-500">No billing history found.</td></tr>`;
+        } else {
+            billingHistory.forEach(record => {
+                let statusClass = record.status === "paid" ? "text-green-500" : 
+                                 record.status === "overdue" ? "text-red-500" : "text-gray-500";
+                
+                billingHistoryTable.innerHTML += `
+                    <tr>
+                        <td class="p-2">₱${record.amount}</td>
+                        <td class="p-2">${new Date(record.due_date).toLocaleDateString()}</td>
+                        <td class="p-2 ${statusClass}">${record.status}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Show the modal
+        document.querySelector("#billingModal").classList.remove("hidden");
+    } catch (error) {
+        console.error("Unexpected error in viewBilling:", error);
+        alert("An unexpected error occurred while loading billing records");
     }
-
-    const billingTable = document.querySelector("#billingTable");
-    billingTable.innerHTML = "";
-
-    if (data.length === 0) {
-        billingTable.innerHTML = `<tr><td colspan="3" class="text-center text-gray-500">No billing records found.</td></tr>`;
-    } else {
-        data.forEach(record => {
-            billingTable.innerHTML += `
-                <tr>
-                    <td>₱${record.amount}</td>
-                    <td>${new Date(record.due_date).toLocaleDateString()}</td>
-                    <td class="${record.status === 'paid' ? 'text-green-500' : 'text-red-500'}">${record.status}</td>
-                </tr>
-            `;
-        });
-    }
-
-    document.querySelector("#billingModal").classList.remove("hidden");
 };
 
 document.querySelector("#closeBillingModal").addEventListener("click", () => {

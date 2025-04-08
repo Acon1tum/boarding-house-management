@@ -1,8 +1,9 @@
 import { supabase } from "../db/supabase.js";
+import { getUserDetails } from "./auth.js";
 
 // Ensure that only tenants can access the bills page
 document.addEventListener("DOMContentLoaded", () => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     
     if (!user) {
         console.warn("No user found, redirecting to login.");
@@ -26,105 +27,161 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     console.log("User authenticated as tenant:", user);
-    fetchBills();  
-    fetchBillingHistory(user.id);  // Fetch billing history from `billing_record`
+    fetchActiveBills();
+    fetchBillingHistory();
     setInterval(checkDueBills, 60000);
 });
 
-// Fetch Bills (Active Bills)
-async function fetchBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return;
+// Fetch Active Bills
+async function fetchActiveBills() {
+    try {
+        const user = getUserDetails();
+        if (!user || user.role !== "tenant") {
+            window.location.href = "index.html";
+            return;
+        }
 
-    const { data, error } = await supabase
-        .from("bills")
-        .select("*")
-        .eq("tenant_id", user.id)
-        .order("due_date", { ascending: true });
+        const { data: bills, error } = await supabase
+            .from("bills")
+            .select("*")
+            .eq("tenant_id", user.id)
+            .eq("status", "pending")
+            .order("due_date", { ascending: true });
 
-    if (error) {
-        console.error("Error fetching bills:", error.message);
-        return;
-    }
+        if (error) {
+            console.error("Error fetching active bills:", error);
+            alert("Failed to fetch active bills. Please try again.");
+            return;
+        }
 
-    const billList = document.getElementById("billListTable");
-    billList.innerHTML = "";
+        const billListTable = document.getElementById("billListTable");
+        if (!billListTable) {
+            console.error("Could not find billListTable element");
+            return;
+        }
 
-    if (data.length === 0) {
-        billList.innerHTML = `<tr><td class="p-3 text-gray-600" colspan="3">No active bills found.</td></tr>`;
-        return;
-    }
+        billListTable.innerHTML = "";
 
-    data.forEach(bill => {
-        let statusClass = getStatusClass(bill.status);
-        billList.innerHTML += `
-            <tr>
-                <td class="p-3 text-gray-600">₱${bill.amount}</td>
-                <td class="p-3 text-gray-600">${new Date(bill.due_date).toDateString()}</td>
-                <td class="p-3 ${statusClass}">${bill.status}</td>
-            </tr>
-        `;
-    });
-}
+        if (!bills || bills.length === 0) {
+            billListTable.innerHTML = `
+                <tr>
+                    <td colspan="3" class="p-3 text-gray-600 text-center">No active bills</td>
+                </tr>
+            `;
+            return;
+        }
 
-// Fetch Billing History (Archived Bills)
-async function fetchBillingHistory(tenantId) {
-    const { data, error } = await supabase
-        .from("billing_record")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .order("due_date", { ascending: false });
-
-    if (error) {
-        console.error("Error fetching billing history:", error.message);
-        return;
-    }
-
-    // Store original data globally for filtering
-    window.billingData = data;
-    displayBillingHistory(data);
-}
-document.getElementById("monthFilter").addEventListener("change", function () {
-    const selectedMonth = this.value;
-    filterBillingHistory(selectedMonth);
-});
-
-function filterBillingHistory(month) {
-    let filteredData = window.billingData;
-
-    if (month !== "all") {
-        filteredData = window.billingData.filter(bill => {
-            const billMonth = new Date(bill.due_date).getMonth() + 1; // JavaScript months are 0-based
-            return billMonth == month;
+        bills.forEach(bill => {
+            const dueDate = new Date(bill.due_date);
+            const isOverdue = dueDate < new Date() && bill.status === "pending";
+            
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="p-3">₱${bill.amount.toFixed(2)}</td>
+                <td class="p-3">${dueDate.toLocaleDateString()}</td>
+                <td class="p-3">
+                    <span class="${isOverdue ? 'text-red-500' : 'text-yellow-500'}">
+                        ${isOverdue ? 'Overdue' : 'Pending'}
+                    </span>
+                </td>
+            `;
+            billListTable.appendChild(row);
         });
-    }
 
-    displayBillingHistory(filteredData);
+        // Check for overdue bills and show notification
+        const overdueBills = bills.filter(bill => 
+            new Date(bill.due_date) < new Date() && bill.status === "pending"
+        );
+        
+        if (overdueBills.length > 0) {
+            showNotification(`You have ${overdueBills.length} overdue bill(s)!`);
+        }
+    } catch (error) {
+        console.error("Unexpected error in fetchActiveBills:", error);
+        alert("An unexpected error occurred. Please try again.");
+    }
 }
 
+// Fetch Billing History
+async function fetchBillingHistory() {
+    try {
+        const user = getUserDetails();
+        if (!user || user.role !== "tenant") {
+            window.location.href = "index.html";
+            return;
+        }
 
-// Display Billing History in Table
+        const { data: billingHistory, error } = await supabase
+            .from("billing_record")
+            .select("*")
+            .eq("tenant_id", user.id)
+            .order("payment_date", { ascending: false });
+
+        if (error) {
+            console.error("Error fetching billing history:", error);
+            alert("Failed to fetch billing history. Please try again.");
+            return;
+        }
+
+        const billHistoryTable = document.getElementById("billHistoryTable");
+        if (!billHistoryTable) {
+            console.error("Could not find billHistoryTable element");
+            return;
+        }
+
+        billHistoryTable.innerHTML = "";
+
+        if (!billingHistory || billingHistory.length === 0) {
+            billHistoryTable.innerHTML = `
+                <tr>
+                    <td colspan="3" class="p-3 text-gray-600 text-center">No billing history</td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Store billing data for filtering
+        window.billingData = billingHistory;
+
+        // Display all billing history initially
+        displayBillingHistory(billingHistory);
+    } catch (error) {
+        console.error("Unexpected error in fetchBillingHistory:", error);
+        alert("An unexpected error occurred. Please try again.");
+    }
+}
+
+// Display Billing History
 function displayBillingHistory(bills) {
     const billHistoryTable = document.getElementById("billHistoryTable");
+    if (!billHistoryTable) return;
+
     billHistoryTable.innerHTML = "";
 
-    if (bills.length === 0) {
-        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600">No billing history found for this month.</td></tr>`;
+    if (!bills || bills.length === 0) {
+        billHistoryTable.innerHTML = `
+            <tr>
+                <td colspan="3" class="p-3 text-gray-600 text-center">No billing history found</td>
+            </tr>
+        `;
         return;
     }
 
     bills.forEach(bill => {
-        let statusClass = getStatusClass(bill.status);
-        billHistoryTable.innerHTML += `
-            <tr>
-                <td class="p-3">₱${bill.amount}</td>
-                <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
-                <td class="p-3 ${statusClass}">${bill.status}</td>
-            </tr>
+        const dueDate = new Date(bill.due_date);
+        const paymentDate = new Date(bill.payment_date);
+        
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="p-3">₱${bill.amount.toFixed(2)}</td>
+            <td class="p-3">${dueDate.toLocaleDateString()}</td>
+            <td class="p-3">
+                <span class="text-green-500">Paid on ${paymentDate.toLocaleDateString()}</span>
+            </td>
         `;
+        billHistoryTable.appendChild(row);
     });
 }
-
 
 // Utility Function: Get Status Class for Styling
 function getStatusClass(status) {
@@ -147,7 +204,7 @@ function sendNotification(message) {
 
 // Notify Due Bills
 async function checkDueBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     if (!user) return;
 
     const { data, error } = await supabase

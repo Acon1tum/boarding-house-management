@@ -1,9 +1,10 @@
 // js/billingManagement.js
 import { supabase } from "../db/supabase.js";
+import { getUserDetails } from "./auth.js";
 
 // Fetch All Bills
 async function fetchAllBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = getUserDetails();
     if (!user || user.role !== "landlord") return;
 
     const { data, error } = await supabase
@@ -30,7 +31,7 @@ async function fetchAllBills() {
     billListTable.innerHTML = data.map(bill => `
         <tr class="border-b">
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
-            <td class="p-3">${bill.amount}</td>
+            <td class="p-3">₱${bill.amount}</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
             <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : "text-green-500"}">
                 ${bill.status}
@@ -57,62 +58,89 @@ async function fetchAllBills() {
 
 // Generate Bills for Tenants with Approved Bookings
 async function generateBills() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || user.role !== "landlord") return;
+    try {
+        const user = getUserDetails();
+        if (!user || user.role !== "landlord") {
+            alert("Only landlords can generate bills.");
+            return;
+        }
 
-    // Fetch all tenants with approved bookings
-    const { data: bookings, error: bookingsError } = await supabase
-        .from("bookings")
-        .select("tenant_id, rooms(price)")
-        .eq("status", "approved");
+        // Since there's no direct link between rooms and landlords,
+        // we'll fetch all active tenancies and filter them later
+        const { data: tenancies, error: tenancyError } = await supabase
+            .from("room_tenants")
+            .select(`
+                *,
+                rooms (
+                    id,
+                    price
+                )
+            `)
+            .is("end_date", null); // Active tenancies have no end date
 
-    if (bookingsError) {
-        console.error("Error fetching bookings:", bookingsError);
-        return;
-    }
+        if (tenancyError) {
+            console.error("Error fetching tenancies:", tenancyError);
+            alert("Failed to fetch tenant information. Please try again.");
+            return;
+        }
 
-    if (!bookings || bookings.length === 0) {
-        alert("No tenants with approved bookings found.");
-        return;
-    }
+        if (!tenancies || tenancies.length === 0) {
+            alert("No active tenancies found.");
+            return;
+        }
 
-    // Fetch existing bills to avoid duplicates
-    const { data: existingBills, error: billsError } = await supabase
-        .from("bills")
-        .select("tenant_id");
+        // Get current date and next month's date
+        const currentDate = new Date();
+        const nextMonth = new Date(currentDate);
+        nextMonth.setMonth(currentDate.getMonth() + 1);
 
-    if (billsError) {
-        console.error("Error fetching existing bills:", billsError);
-        return;
-    }
+        // Fetch existing bills for this month
+        const { data: existingBills, error: billsError } = await supabase
+            .from("bills")
+            .select("tenant_id")
+            .gte("due_date", currentDate.toISOString())
+            .lte("due_date", nextMonth.toISOString());
 
-    const tenantsWithBills = new Set(existingBills.map(bill => bill.tenant_id));
+        if (billsError) {
+            console.error("Error checking existing bills:", billsError);
+            alert("Failed to check existing bills. Please try again.");
+            return;
+        }
 
-    // Generate bills for tenants without existing bills
-    const billsToInsert = bookings
-        .filter(booking => !tenantsWithBills.has(booking.tenant_id))
-        .map(booking => ({
-            tenant_id: booking.tenant_id,
-            amount: booking.rooms.price,
-            due_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(), // Due next month
-            status: "pending"
-        }));
+        // Create a set of tenant IDs that already have bills
+        const tenantsWithBills = new Set(existingBills?.map(bill => bill.tenant_id) || []);
 
-    if (billsToInsert.length === 0) {
-        alert("No new bills to generate.");
-        return;
-    }
+        // Prepare bills to insert
+        const billsToInsert = tenancies
+            .filter(tenancy => !tenantsWithBills.has(tenancy.tenant_id))
+            .map(tenancy => ({
+                tenant_id: tenancy.tenant_id,
+                amount: tenancy.rooms.price, // Use the room price as the bill amount
+                due_date: nextMonth.toISOString(),
+                status: "pending"
+            }));
 
-    const { error: insertError } = await supabase
-        .from("bills")
-        .insert(billsToInsert);
+        if (billsToInsert.length === 0) {
+            alert("No new bills to generate. All tenants already have bills for this month.");
+            return;
+        }
 
-    if (insertError) {
-        console.error("Error generating bills:", insertError);
-        alert("Failed to generate bills.");
-    } else {
-        alert("Bills generated successfully!");
-        fetchAllBills();
+        // Insert new bills
+        const { error: insertError } = await supabase
+            .from("bills")
+            .insert(billsToInsert);
+
+        if (insertError) {
+            console.error("Error generating bills:", insertError);
+            alert("Failed to generate bills. Please try again.");
+            return;
+        }
+
+        alert(`Successfully generated ${billsToInsert.length} new bills!`);
+        fetchAllBills(); // Refresh the bills list
+    } catch (error) {
+        console.error("Unexpected error in generateBills:", error);
+        alert("An unexpected error occurred. Please try again.");
     }
 }
 
@@ -136,7 +164,7 @@ function attachEventListeners() {
 
 // Open Confirmation Modal for Mark as Paid
 function openConfirmationModal(billId, amount) {
-    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>${amount}</strong> as paid?`;
+    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>₱${amount}</strong> as paid?`;
     document.getElementById("confirmMarkPaidBtn").setAttribute("data-id", billId);
     document.getElementById("confirmationModal").classList.remove("hidden");
 }
@@ -154,15 +182,8 @@ document.getElementById("closeConfirmationBtn").addEventListener("click", () => 
 });
 
 async function markAsPaid(id) {
-    const { data, error } = await supabase
-        .from("bills")
-        .update({ status: "paid" })
-        .eq("id", id);
-    
-    if (error) {
-        alert("Failed to update bill: " + error.message);
-    } else {
-        // Fetch bill details along with tenant info
+    try {
+        // Fetch bill details before updating
         const { data: bill, error: fetchError } = await supabase
             .from("bills")
             .select("id, tenant_id, amount, due_date, status, users(first_name, last_name)")
@@ -170,13 +191,61 @@ async function markAsPaid(id) {
             .single();
 
         if (fetchError || !bill) {
-            alert("Error fetching bill details.");
+            throw new Error("Error fetching bill details");
+        }
+
+        // Check if bill is already paid
+        if (bill.status === "paid") {
+            alert("This bill is already marked as paid.");
             return;
+        }
+
+        // Start a transaction by using a single update operation
+        const { error: updateError } = await supabase
+            .from("bills")
+            .update({ status: "paid" })
+            .eq("id", id);
+        
+        if (updateError) {
+            throw new Error("Error updating bill status");
+        }
+
+        // Add to billing_record with better error handling
+        const { data: recordData, error: recordError } = await supabase
+            .from("billing_record")
+            .insert([{
+                tenant_id: bill.tenant_id,
+                amount: bill.amount,
+                due_date: bill.due_date,
+                status: "paid",
+                payment_date: new Date().toISOString()
+            }])
+            .select();
+
+        if (recordError) {
+            console.error("Error adding to billing record:", recordError);
+            // Try to rollback the bill status update
+            await supabase
+                .from("bills")
+                .update({ status: "pending" })
+                .eq("id", id);
+            
+            throw new Error("Failed to record payment in billing history. Bill status has been reverted.");
+        } else {
+            console.log("Successfully added to billing record:", recordData);
         }
 
         // Print the receipt with tenant name
         printReceipt(bill);
-        fetchAllBills();  // Refresh the list
+        
+        // Refresh the list
+        fetchAllBills();
+        
+        // Show success message
+        alert("Bill marked as paid successfully!");
+    } catch (error) {
+        console.error("Error marking bill as paid:", error);
+        alert("Failed to update bill: " + error.message);
     }
 }
 
@@ -250,90 +319,65 @@ function printReceipt(bill) {
         </head>
         <body>
             <div class="receipt-container">
-                <img src="https://via.placeholder.com/80" alt="Company Logo" class="company-logo"> 
-                <div class="receipt-header">BOARDING HOUSE RECEIPT</div>
-                <p>Date: ${new Date().toLocaleDateString()}</p>
-
+                <div class="receipt-header">BOARDING HOUSE MANAGEMENT</div>
                 <div class="separator"></div>
-
                 <div class="receipt-details">
                     <p><strong>Receipt No:</strong> ${bill.id}</p>
-                    <p><strong>Tenant Name:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
-                    <p><strong>Amount Paid:</strong> ₱${bill.amount.toFixed(2)}</p>
+                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p><strong>Tenant:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
+                    <p><strong>Amount:</strong> ₱${bill.amount}</p>
                     <p><strong>Due Date:</strong> ${new Date(bill.due_date).toLocaleDateString()}</p>
-                    <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
+                    <p><strong>Status:</strong> PAID</p>
                 </div>
-
                 <div class="separator"></div>
-
-                <p class="footer">Thank you for your payment!</p>
-                <p class="footer">Need help? Call: (123) 456-7890</p>
+                <div class="footer">
+                    <p>Thank you for your payment!</p>
+                </div>
             </div>
         </body>
         </html>
     `;
 
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(receiptContent);
-    newWindow.document.close();
-    newWindow.print();
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(receiptContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
 }
-
 
 async function deleteBill(id) {
-    if (!confirm("Are you sure you want to delete this bill?")) return;
-
-    // Fetch the bill before deletion
-    const { data: bill, error: fetchError } = await supabase
-        .from("bills")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (fetchError || !bill) {
-        alert("Error fetching bill details.");
+    if (!confirm("Are you sure you want to delete this bill?")) {
         return;
     }
 
-    // Insert the bill into `billing_record` before deleting
-    const { error: insertError } = await supabase
-        .from("billing_record")
-        .insert([{ 
-            tenant_id: bill.tenant_id,
-            amount: bill.amount,
-            due_date: bill.due_date,
-            status: bill.status,
-            payment_date: bill.payment_date
-        }]);
+    try {
+        const { error } = await supabase
+            .from("bills")
+            .delete()
+            .eq("id", id);
 
-    if (insertError) {
-        alert("Failed to archive bill: " + insertError.message);
-        return;
-    }
+        if (error) {
+            throw new Error("Error deleting bill");
+        }
 
-    // Delete the bill from `bills`
-    const { error: deleteError } = await supabase.from("bills").delete().eq("id", id);
-
-    if (deleteError) {
-        alert("Failed to delete bill: " + deleteError.message);
-    } else {
+        alert("Bill deleted successfully!");
         fetchAllBills();
+    } catch (error) {
+        console.error("Error deleting bill:", error);
+        alert("Failed to delete bill: " + error.message);
     }
 }
 
-
 // Initialize
-document.addEventListener("DOMContentLoaded", fetchAllBills);
-
-// Add Generate Bills Button
 document.addEventListener("DOMContentLoaded", () => {
-    const generateBillsBtn = document.createElement("button");
-    generateBillsBtn.textContent = "Generate Bills";
-    generateBillsBtn.className = "bg-blue-500 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-600 transition";
-    generateBillsBtn.addEventListener("click", generateBills);
-
-    const header = document.querySelector("main .flex.justify-between.items-center.mb-6");
-    if (header) {
-        header.appendChild(generateBillsBtn);
+    fetchAllBills();
+    
+    // Attach event listener to the existing generate bills button
+    const generateBillsBtn = document.getElementById("generateBillsBtn");
+    if (generateBillsBtn) {
+        generateBillsBtn.addEventListener("click", generateBills);
     }
 });
