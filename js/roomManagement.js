@@ -92,7 +92,7 @@ async function fetchRooms() {
                     <td class="p-2">${room.bedrooms}</td>
                     <td class="p-2">${room.capacity}</td>
                     <td class="p-2 ${statusClass}">${statusText}</td>
-                    <td class="p-2">₱${room.price}</td>
+                    <td class="p-2">₱${room.price.toFixed(2)}</td>
                     <td class="p-2">
                         <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
                         <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
@@ -169,12 +169,13 @@ window.viewOccupants = async function(roomId) {
 
     // Create and show modal
     const modal = document.createElement('div');
+    modal.id = 'occupantsModal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
     modal.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-lg w-96">
             ${occupantsHTML}
             <div class="mt-4 flex justify-end">
-                <button onclick="this.closest('div').remove()" class="bg-gray-500 text-white px-4 py-2 rounded">
+                <button id="closeOccupantsModal" class="bg-gray-500 text-white px-4 py-2 rounded">
                     Close
                 </button>
             </div>
@@ -182,6 +183,11 @@ window.viewOccupants = async function(roomId) {
     `;
 
     document.body.appendChild(modal);
+    
+    // Add event listener to the close button
+    document.getElementById('closeOccupantsModal').addEventListener('click', function() {
+        document.getElementById('occupantsModal').remove();
+    });
 };
 
 // Update Pagination UI

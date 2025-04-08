@@ -77,7 +77,7 @@ async function fetchActiveBills() {
             
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td class="p-3">₱${bill.amount.toFixed(2)}</td>
+                <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
                 <td class="p-3">${dueDate.toLocaleDateString()}</td>
                 <td class="p-3">
                     <span class="${isOverdue ? 'text-red-500' : 'text-yellow-500'}">
@@ -173,7 +173,7 @@ function displayBillingHistory(bills) {
         
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td class="p-3">₱${bill.amount.toFixed(2)}</td>
+            <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
             <td class="p-3">${dueDate.toLocaleDateString()}</td>
             <td class="p-3">
                 <span class="text-green-500">Paid on ${paymentDate.toLocaleDateString()}</span>

@@ -31,7 +31,7 @@ async function fetchAllBills() {
     billListTable.innerHTML = data.map(bill => `
         <tr class="border-b">
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
-            <td class="p-3">₱${bill.amount}</td>
+            <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
             <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : "text-green-500"}">
                 ${bill.status}
@@ -164,7 +164,7 @@ function attachEventListeners() {
 
 // Open Confirmation Modal for Mark as Paid
 function openConfirmationModal(billId, amount) {
-    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>₱${amount}</strong> as paid?`;
+    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>${amount.toFixed(2)} PHP</strong> as paid?`;
     document.getElementById("confirmMarkPaidBtn").setAttribute("data-id", billId);
     document.getElementById("confirmationModal").classList.remove("hidden");
 }
@@ -259,77 +259,45 @@ function printReceipt(bill) {
                     body {
                         margin: 0;
                         padding: 0;
-                        background: white;
-                    }
-                    .receipt-container {
-                        box-shadow: none;
-                        border: none;
                     }
                 }
-
                 body {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    margin: 0;
-                    font-family: 'Courier New', monospace;
-                    background-color: #f8f8f8;
-                }
-
-                .receipt-container {
-                    width: 320px;
+                    font-family: Arial, sans-serif;
                     padding: 20px;
-                    background: white;
-                    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-                    text-align: center;
-                    border-radius: 5px;
+                }
+                .receipt {
                     border: 1px solid #ccc;
+                    padding: 20px;
+                    max-width: 500px;
+                    margin: 0 auto;
                 }
-
-                .receipt-header {
-                    font-size: 18px;
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                }
-
-                .receipt-details {
-                    text-align: left;
-                    font-size: 14px;
-                }
-
-                .separator {
-                    border-top: 1px dashed #000;
-                    margin: 10px 0;
-                }
-
-                .footer {
-                    margin-top: 10px;
-                    font-size: 12px;
-                    font-weight: bold;
+                .header {
                     text-align: center;
+                    margin-bottom: 20px;
                 }
-
-                .company-logo {
-                    max-width: 80px;
-                    display: block;
-                    margin: 0 auto 10px;
+                .details {
+                    margin-bottom: 20px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    font-size: 12px;
                 }
             </style>
         </head>
         <body>
-            <div class="receipt-container">
-                <div class="receipt-header">BOARDING HOUSE MANAGEMENT</div>
-                <div class="separator"></div>
-                <div class="receipt-details">
-                    <p><strong>Receipt No:</strong> ${bill.id}</p>
+            <div class="receipt">
+                <div class="header">
+                    <h1>BOARDING HOUSE MANAGEMENT</h1>
+                    <h2>Payment Receipt</h2>
+                </div>
+                <div class="details">
                     <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
                     <p><strong>Tenant:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
-                    <p><strong>Amount:</strong> ₱${bill.amount}</p>
+                    <p><strong>Amount:</strong> ${bill.amount.toFixed(2)} PHP</p>
                     <p><strong>Due Date:</strong> ${new Date(bill.due_date).toLocaleDateString()}</p>
                     <p><strong>Status:</strong> PAID</p>
                 </div>
-                <div class="separator"></div>
                 <div class="footer">
                     <p>Thank you for your payment!</p>
                 </div>

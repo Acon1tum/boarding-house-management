@@ -37,7 +37,7 @@ async function fetchBookingStatus() {
         html += `
             <div class="border-b py-4">
                 <p class="text-lg">Room: ${tenancy.rooms.room_number}</p>
-                <p>Price: в‚±${tenancy.rooms.price} / month</p>
+                <p>Price: ${tenancy.rooms.price.toFixed(2)} PHP / month</p>
                 <p>Start Date: ${new Date(tenancy.start_date).toLocaleDateString()}</p>
                 ${tenancy.end_date ? `<p>End Date: ${new Date(tenancy.end_date).toLocaleDateString()}</p>` : ""}
             </div>
