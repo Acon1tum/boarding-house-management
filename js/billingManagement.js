@@ -164,7 +164,9 @@ function attachEventListeners() {
 
 // Open Confirmation Modal for Mark as Paid
 function openConfirmationModal(billId, amount) {
-    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>${amount.toFixed(2)} PHP</strong> as paid?`;
+    // Convert amount to a number before using toFixed()
+    const numericAmount = parseFloat(amount);
+    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>${numericAmount.toFixed(2)} PHP</strong> as paid?`;
     document.getElementById("confirmMarkPaidBtn").setAttribute("data-id", billId);
     document.getElementById("confirmationModal").classList.remove("hidden");
 }
@@ -262,26 +264,59 @@ function printReceipt(bill) {
                     }
                 }
                 body {
-                    font-family: Arial, sans-serif;
+                    font-family: 'Times New Roman', Times, serif;
                     padding: 20px;
+                    color: #333;
                 }
                 .receipt {
-                    border: 1px solid #ccc;
-                    padding: 20px;
-                    max-width: 500px;
+                    border: 1px solid #000;
+                    padding: 30px;
+                    max-width: 600px;
                     margin: 0 auto;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
                 }
                 .header {
                     text-align: center;
-                    margin-bottom: 20px;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #000;
+                    padding-bottom: 15px;
+                }
+                .header h1 {
+                    font-size: 24px;
+                    margin: 0 0 5px 0;
+                    text-transform: uppercase;
+                }
+                .header h2 {
+                    font-size: 18px;
+                    margin: 0;
+                    font-weight: normal;
                 }
                 .details {
-                    margin-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .details p {
+                    margin: 10px 0;
+                    font-size: 14px;
+                }
+                .details strong {
+                    display: inline-block;
+                    width: 120px;
                 }
                 .footer {
                     text-align: center;
-                    margin-top: 20px;
+                    margin-top: 30px;
                     font-size: 12px;
+                    border-top: 1px solid #ccc;
+                    padding-top: 15px;
+                }
+                .amount {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin: 15px 0;
+                }
+                .status {
+                    font-weight: bold;
+                    color: #000;
                 }
             </style>
         </head>
@@ -294,9 +329,9 @@ function printReceipt(bill) {
                 <div class="details">
                     <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
                     <p><strong>Tenant:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
-                    <p><strong>Amount:</strong> ${bill.amount.toFixed(2)} PHP</p>
+                    <p class="amount"><strong>Amount:</strong> ${bill.amount.toFixed(2)} PHP</p>
                     <p><strong>Due Date:</strong> ${new Date(bill.due_date).toLocaleDateString()}</p>
-                    <p><strong>Status:</strong> PAID</p>
+                    <p><strong>Status:</strong> <span class="status">PAID</span></p>
                 </div>
                 <div class="footer">
                     <p>Thank you for your payment!</p>

@@ -135,6 +135,22 @@ async function approveRequest(requestId, roomId) {
             throw new Error("Error fetching booking request");
         }
 
+        // Check if tenant already has an active booking
+        const { data: activeBookings, error: activeBookingsError } = await supabase
+            .from("room_tenants")
+            .select("*")
+            .eq("tenant_id", request.tenant_id)
+            .is("end_date", null);
+
+        if (activeBookingsError) {
+            throw new Error("Error checking active bookings");
+        }
+
+        if (activeBookings && activeBookings.length > 0) {
+            alert("Cannot approve request: Tenant already has an active booking");
+            return;
+        }
+
         // Check room capacity
         const { data: room, error: roomError } = await supabase
             .from("rooms")
@@ -183,6 +199,18 @@ async function approveRequest(requestId, roomId) {
 
         if (tenantError) {
             throw new Error("Error creating tenant record");
+        }
+
+        // Reject any other pending booking requests from this tenant
+        const { error: rejectOtherRequestsError } = await supabase
+            .from("booking_requests")
+            .update({ status: "rejected" })
+            .eq("tenant_id", request.tenant_id)
+            .eq("status", "pending")
+            .neq("id", requestId);
+
+        if (rejectOtherRequestsError) {
+            console.error("Error rejecting other pending requests:", rejectOtherRequestsError);
         }
 
         alert("Booking request approved successfully!");
