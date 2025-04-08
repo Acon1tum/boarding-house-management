@@ -9,16 +9,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // Fetch the tenant's current booking
-    const { data: booking, error } = await supabase
-        .from("bookings")
+    // Fetch the tenant's current tenancies
+    const { data: tenancies, error } = await supabase
+        .from("room_tenants")
         .select("id, room_id")
         .eq("tenant_id", user.id)
-        .eq("status", "approved")
-        .maybeSingle();
+        .is("end_date", null);
 
-    if (error || !booking) {
-        alert("You do not have an active booking to cancel.");
+    if (error || !tenancies || tenancies.length === 0) {
+        alert("You do not have any active room bookings to cancel.");
         window.location.href = "dashboard.html";
         return;
     }
@@ -29,7 +28,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const { error } = await supabase
             .from("cancellation_requests")
-            .insert([{ tenant_id: user.id, room_id: booking.room_id }]);
+            .insert(tenancies.map(tenancy => ({ 
+                tenant_id: user.id, 
+                room_id: tenancy.room_id 
+            })));
 
         if (error) {
             alert("Failed to submit cancellation request: " + error.message);

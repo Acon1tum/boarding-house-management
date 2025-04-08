@@ -10,14 +10,11 @@ async function fetchBookingStatus() {
         return;
     }
 
-    console.log("Fetching approved booking status for:", user);
-
-    const { data: booking, error } = await supabase
-        .from("bookings")
+    const { data: tenancies, error } = await supabase
+        .from("room_tenants")
         .select("id, start_date, end_date, rooms(room_number, status, price)")
         .eq("tenant_id", user.id)
-        .eq("status", "approved") // Fetch only approved bookings
-        .maybeSingle();
+        .is("end_date", null);
 
     const roomStatusDiv = document.getElementById("roomStatus");
 
@@ -27,7 +24,7 @@ async function fetchBookingStatus() {
         return;
     }
 
-    if (!booking) {
+    if (!tenancies || tenancies.length === 0) {
         roomStatusDiv.innerHTML = `
             <p class="text-lg">You have not booked a room yet.</p>
             <a href="booking.html" class="bg-blue-500 text-white px-4 py-2 rounded mt-2 inline-block">Book Now</a>
@@ -35,14 +32,18 @@ async function fetchBookingStatus() {
         return;
     }
 
-    roomStatusDiv.innerHTML = `
-        <h3 class="text-xl font-semibold">Your Booking</h3>
-        <p class="text-lg">Room: ${booking.rooms.room_number}</p>
-        <p>Status: <span class="text-green-500 font-medium">Approved</span></p>
-        <p>Price: ₱${booking.rooms.price} / month</p>
-        <p>Start Date: ${new Date(booking.start_date).toLocaleDateString()}</p>
-        ${booking.end_date ? `<p>End Date: ${new Date(booking.end_date).toLocaleDateString()}</p>` : ""}
-    `;
+    let html = `<h3 class="text-xl font-semibold">Your Bookings</h3>`;
+    tenancies.forEach(tenancy => {
+        html += `
+            <div class="border-b py-4">
+                <p class="text-lg">Room: ${tenancy.rooms.room_number}</p>
+                <p>Price: в‚±${tenancy.rooms.price} / month</p>
+                <p>Start Date: ${new Date(tenancy.start_date).toLocaleDateString()}</p>
+                ${tenancy.end_date ? `<p>End Date: ${new Date(tenancy.end_date).toLocaleDateString()}</p>` : ""}
+            </div>
+        `;
+    });
+    roomStatusDiv.innerHTML = html;
 }
 
 // Fetch Tenant's Billing Notifications

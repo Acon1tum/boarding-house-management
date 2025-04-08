@@ -60,19 +60,19 @@ async function generateBills() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || user.role !== "landlord") return;
 
-    // Fetch all tenants with approved bookings
-    const { data: bookings, error: bookingsError } = await supabase
-        .from("bookings")
+    // Fetch all active tenancies
+    const { data: tenancies, error: tenancyError } = await supabase
+        .from("room_tenants")
         .select("tenant_id, rooms(price)")
-        .eq("status", "approved");
+        .is("end_date", null);
 
-    if (bookingsError) {
-        console.error("Error fetching bookings:", bookingsError);
+    if (tenancyError) {
+        console.error("Error fetching tenancies:", tenancyError);
         return;
     }
 
-    if (!bookings || bookings.length === 0) {
-        alert("No tenants with approved bookings found.");
+    if (!tenancies || tenancies.length === 0) {
+        alert("No active tenancies found.");
         return;
     }
 
@@ -89,12 +89,12 @@ async function generateBills() {
     const tenantsWithBills = new Set(existingBills.map(bill => bill.tenant_id));
 
     // Generate bills for tenants without existing bills
-    const billsToInsert = bookings
-        .filter(booking => !tenantsWithBills.has(booking.tenant_id))
-        .map(booking => ({
-            tenant_id: booking.tenant_id,
-            amount: booking.rooms.price,
-            due_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(), // Due next month
+    const billsToInsert = tenancies
+        .filter(tenancy => !tenantsWithBills.has(tenancy.tenant_id))
+        .map(tenancy => ({
+            tenant_id: tenancy.tenant_id,
+            amount: tenancy.rooms.price,
+            due_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
             status: "pending"
         }));
 
