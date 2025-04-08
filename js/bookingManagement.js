@@ -1,83 +1,223 @@
 import { supabase } from "../db/supabase.js";
 import { getUserDetails } from "../js/auth.js";
 
-// Fetch All Bookings
+// Fetch All Booking Requests
 async function fetchAllBookings() {
     const user = getUserDetails();
 
     // Check if user is a landlord, otherwise redirect to dashboard
     if (user.role !== "landlord") {
-        window.location.href = "dashboard.html"; // Redirect if not landlord
+        window.location.href = "dashboard.html";
         return;
     }
     
-    // Log the user info if you want (optional)
-    console.log("Fetching all bookings for user:", user);  // This is just for debugging if needed
+    console.log("Fetching all booking requests for landlord:", user);
 
-    // Fetch all bookings from the "bookings" table, including the room number and tenant name
-    const { data: bookings, error } = await supabase
-        .from("bookings")
+    // Fetch all booking requests with room and tenant details
+    const { data: bookingRequests, error } = await supabase
+        .from("booking_requests")
         .select(`
-            id, 
-            start_date, 
-            end_date, 
-            status, 
-            rooms(room_number),
+            id,
+            request_date,
+            status,
             tenant_id,
-            users(first_name, last_name)
-        `);  // Select tenant name from related users table
+            room_id,
+            rooms (
+                id,
+                room_number,
+                capacity
+            )
+        `)
+        .order('request_date', { ascending: false });
 
-    // Log the fetched bookings data to check
-    console.log("Fetched bookings data:", bookings);
-
-    // Handle potential error in fetching data
     if (error) {
-        console.error("Error fetching bookings:", error);
-        document.getElementById("bookingListTable").innerHTML = `<tr><td colspan="5" class="p-3 text-red-500 text-center">Error loading bookings.</td></tr>`;
+        console.error("Error fetching booking requests:", error);
+        document.getElementById("bookingListTable").innerHTML = `<tr><td colspan="7" class="p-3 text-red-500 text-center">Error loading booking requests.</td></tr>`;
         return;
     }
 
-    // Handle the case when there are no bookings or data is empty
-    if (!bookings || bookings.length === 0) {
-        document.getElementById("bookingListTable").innerHTML = `<tr><td colspan="5" class="p-3 text-gray-500 text-center">No bookings found.</td></tr>`;
+    if (!bookingRequests || bookingRequests.length === 0) {
+        document.getElementById("bookingListTable").innerHTML = `<tr><td colspan="7" class="p-3 text-gray-500 text-center">No booking requests found.</td></tr>`;
         return;
     }
 
-    // Render bookings into the table
+    // Get tenant details for each request
+    const tenantIds = bookingRequests.map(request => request.tenant_id);
+    const { data: tenants, error: tenantsError } = await supabase
+        .from("users")
+        .select("id, first_name, last_name, email, phone")
+        .in("id", tenantIds);
+
+    if (tenantsError) {
+        console.error("Error fetching tenant details:", tenantsError);
+    }
+
+    // Create a map of tenant details
+    const tenantMap = {};
+    if (tenants) {
+        tenants.forEach(tenant => {
+            tenantMap[tenant.id] = tenant;
+        });
+    }
+
+    // Get current occupancy for each room
+    const { data: occupancyData, error: occupancyError } = await supabase
+        .from("room_tenants")
+        .select("room_id")
+        .is("end_date", null);
+
+    const occupancyMap = {};
+    if (!occupancyError) {
+        occupancyData.forEach(item => {
+            occupancyMap[item.room_id] = (occupancyMap[item.room_id] || 0) + 1;
+        });
+    }
+
     const bookingListTable = document.getElementById("bookingListTable");
+    bookingListTable.innerHTML = bookingRequests
+        .map((request) => {
+            const roomNumber = request.rooms ? request.rooms.room_number : "N/A";
+            const tenant = tenantMap[request.tenant_id] || null;
+            const tenantName = tenant ? `${tenant.first_name} ${tenant.last_name}` : "Unknown Tenant";
+            const tenantEmail = tenant ? tenant.email : "N/A";
+            const tenantPhone = tenant ? tenant.phone : "N/A";
+            const currentOccupants = occupancyMap[request.rooms?.id] || 0;
+            const roomCapacity = request.rooms?.capacity || 0;
+            const isRoomFull = currentOccupants >= roomCapacity;
 
-    bookingListTable.innerHTML = bookings
-        .map((booking) => {
-            // Safely access room_number, fallback to "N/A" if not available
-            const roomNumber = booking.rooms ? booking.rooms.room_number : "N/A";
-            
-            // Get tenant name from the users object
-            const tenantFirstName = booking.users ? booking.users.first_name : "Unknown";
-            const tenantLastName = booking.users ? booking.users.last_name : "Tenant";
-            const tenantFullName = `${tenantFirstName} ${tenantLastName}`;
-            
-            // Dynamically set status color based on the booking status
-            let statusColorClass = "text-yellow-500";  // Default color for pending status
-
-            if (booking.status === "approved") {
-                statusColorClass = "text-green-500 font-semibold";  // Green for approved
-            } else if (booking.status === "rejected") {
-                statusColorClass = "text-red-500 font-semibold";  // Red for rejected
+            let statusColorClass = "text-yellow-500";
+            if (request.status === "approved") {
+                statusColorClass = "text-green-500 font-semibold";
+            } else if (request.status === "rejected") {
+                statusColorClass = "text-red-500 font-semibold";
             }
 
-            // Return HTML table rows for each booking
+            const actionButtons = request.status === "pending" 
+                ? `
+                    <button onclick="approveRequest('${request.id}', '${request.rooms?.id}')" 
+                            class="bg-green-500 text-white px-3 py-1 rounded mr-2 ${isRoomFull ? 'opacity-50 cursor-not-allowed' : ''}"
+                            ${isRoomFull ? 'disabled' : ''}>
+                        Approve
+                    </button>
+                    <button onclick="rejectRequest('${request.id}')" 
+                            class="bg-red-500 text-white px-3 py-1 rounded">
+                        Reject
+                    </button>
+                `
+                : '';
+
             return `
                 <tr class="border-b">
                     <td class="p-3">${roomNumber}</td>
-                    <td class="p-3">${tenantFullName}</td>
-                    <td class="p-3">${new Date(booking.start_date).toLocaleDateString()}</td>
-                    <td class="p-3">${booking.end_date ? new Date(booking.end_date).toLocaleDateString() : "N/A"}</td>
-                    <td class="p-3 ${statusColorClass}">${booking.status}</td>  <!-- Dynamically applied status color -->
+                    <td class="p-3">${tenantName}</td>
+                    <td class="p-3">${tenantEmail}</td>
+                    <td class="p-3">${tenantPhone}</td>
+                    <td class="p-3">${new Date(request.request_date).toLocaleDateString()}</td>
+                    <td class="p-3 ${statusColorClass}">${request.status}</td>
+                    <td class="p-3">${actionButtons}</td>
                 </tr>
             `;
         })
-        .join("");  // Join all rows together into one string for innerHTML
+        .join("");
 }
 
-// Initialize the booking management page when the DOM is fully loaded
+// Approve Booking Request
+async function approveRequest(requestId, roomId) {
+    try {
+        // Start a transaction
+        const { data: request, error: requestError } = await supabase
+            .from("booking_requests")
+            .select("*")
+            .eq("id", requestId)
+            .single();
+
+        if (requestError || !request) {
+            throw new Error("Error fetching booking request");
+        }
+
+        // Check room capacity
+        const { data: room, error: roomError } = await supabase
+            .from("rooms")
+            .select("capacity")
+            .eq("id", roomId)
+            .single();
+
+        if (roomError || !room) {
+            throw new Error("Error checking room capacity");
+        }
+
+        // Get current occupancy
+        const { count: currentOccupants, error: countError } = await supabase
+            .from("room_tenants")
+            .select("*", { count: 'exact' })
+            .eq("room_id", roomId)
+            .is("end_date", null);
+
+        if (countError) {
+            throw new Error("Error checking room occupancy");
+        }
+
+        if (currentOccupants >= room.capacity) {
+            alert("Cannot approve request: Room has reached maximum capacity");
+            return;
+        }
+
+        // Update booking request status
+        const { error: updateError } = await supabase
+            .from("booking_requests")
+            .update({ status: "approved" })
+            .eq("id", requestId);
+
+        if (updateError) {
+            throw new Error("Error updating booking request");
+        }
+
+        // Create room tenant record
+        const { error: tenantError } = await supabase
+            .from("room_tenants")
+            .insert([{
+                tenant_id: request.tenant_id,
+                room_id: roomId,
+                start_date: new Date().toISOString()
+            }]);
+
+        if (tenantError) {
+            throw new Error("Error creating tenant record");
+        }
+
+        alert("Booking request approved successfully!");
+        fetchAllBookings(); // Refresh the list
+
+    } catch (error) {
+        console.error("Error approving request:", error);
+        alert("Error approving booking request. Please try again.");
+    }
+}
+
+// Reject Booking Request
+async function rejectRequest(requestId) {
+    try {
+        const { error } = await supabase
+            .from("booking_requests")
+            .update({ status: "rejected" })
+            .eq("id", requestId);
+
+        if (error) {
+            throw new Error("Error rejecting booking request");
+        }
+
+        alert("Booking request rejected successfully!");
+        fetchAllBookings(); // Refresh the list
+
+    } catch (error) {
+        console.error("Error rejecting request:", error);
+        alert("Error rejecting booking request. Please try again.");
+    }
+}
+
+// Make functions available globally
+window.approveRequest = approveRequest;
+window.rejectRequest = rejectRequest;
+
+// Initialize the booking management page
 document.addEventListener("DOMContentLoaded", fetchAllBookings);
