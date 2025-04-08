@@ -154,30 +154,25 @@ async function fetchBillingHistory() {
 // Display Billing History
 function displayBillingHistory(bills) {
     const billHistoryTable = document.getElementById("billHistoryTable");
-    if (!billHistoryTable) return;
+    if (!billHistoryTable) {
+        console.error("Could not find billHistoryTable element");
+        return;
+    }
 
     billHistoryTable.innerHTML = "";
 
-    if (!bills || bills.length === 0) {
-        billHistoryTable.innerHTML = `
-            <tr>
-                <td colspan="3" class="p-3 text-gray-600 text-center">No billing history found</td>
-            </tr>
-        `;
+    if (bills.length === 0) {
+        billHistoryTable.innerHTML = `<tr><td colspan="3" class="text-gray-600">No billing history found.</td></tr>`;
         return;
     }
 
     bills.forEach(bill => {
-        const dueDate = new Date(bill.due_date);
-        const paymentDate = new Date(bill.payment_date);
-        
+        const statusClass = getStatusClass(bill.status);
         const row = document.createElement("tr");
         row.innerHTML = `
             <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
-            <td class="p-3">${dueDate.toLocaleDateString()}</td>
-            <td class="p-3">
-                <span class="text-green-500">Paid on ${paymentDate.toLocaleDateString()}</span>
-            </td>
+            <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
+            <td class="p-3 ${statusClass}">${bill.status}</td>
         `;
         billHistoryTable.appendChild(row);
     });

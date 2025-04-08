@@ -46,6 +46,11 @@ async function fetchAllBills() {
                         Mark Paid
                     </button>
                 `}
+                ${bill.status === "paid" ? `
+                    <button class="bg-blue-500 text-white px-2 py-1 rounded print-receipt-btn" data-id="${bill.id}">
+                        Print Receipt
+                    </button>
+                ` : ''}
                 <button class="bg-red-500 text-white px-2 py-1 rounded delete-bill-btn" data-id="${bill.id}">
                     Delete
                 </button>
@@ -158,6 +163,13 @@ function attachEventListeners() {
         button.addEventListener("click", async () => {
             const billId = button.getAttribute("data-id");
             await deleteBill(billId);
+        });
+    });
+
+    document.querySelectorAll(".print-receipt-btn").forEach(button => {
+        button.addEventListener("click", async () => {
+            const billId = button.getAttribute("data-id");
+            await printReceiptForPaidBill(billId);
         });
     });
 }
@@ -371,6 +383,33 @@ async function deleteBill(id) {
     } catch (error) {
         console.error("Error deleting bill:", error);
         alert("Failed to delete bill: " + error.message);
+    }
+}
+
+async function printReceiptForPaidBill(id) {
+    try {
+        // Fetch bill details
+        const { data: bill, error: fetchError } = await supabase
+            .from("bills")
+            .select("id, tenant_id, amount, due_date, status, users(first_name, last_name)")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !bill) {
+            throw new Error("Error fetching bill details");
+        }
+
+        // Check if bill is paid
+        if (bill.status !== "paid") {
+            alert("This bill is not marked as paid yet.");
+            return;
+        }
+
+        // Print the receipt with tenant name
+        printReceipt(bill);
+    } catch (error) {
+        console.error("Error printing receipt:", error);
+        alert("Failed to print receipt: " + error.message);
     }
 }
 
