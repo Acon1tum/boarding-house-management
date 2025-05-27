@@ -1,23 +1,17 @@
 {
     "version": 2,
-    "routes": [
-        { "handle": "filesystem" },
-        { "src": "/assets/(.*)", "dest": "/assets/$1" },
-        { "src": "/js/(.*)", "dest": "/js/$1" },
-        { "src": "/(.*)", "dest": "/index.html" }
-    ],
     "builds": [
-        {
-            "src": "public/**",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "assets/**",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "js/**",
-            "use": "@vercel/static"
-        }
+      { "src": "public/**", "use": "@vercel/static" },
+      { "src": "assets/**", "use": "@vercel/static" },
+      { "src": "js/**", "use": "@vercel/static" }
+    ],
+    "routes": [
+      { "handle": "filesystem" },
+      { "src": "/assets/(.*)", "dest": "/assets/$1" },
+      { "src": "/js/(.*)", "dest": "/js/$1" },
+      { "src": "/(.*)", "dest": "/public/$1" },
+      { "src": "/(.*)", "dest": "/public/index.html" }
+
     ]
-} 
+  }
+  
