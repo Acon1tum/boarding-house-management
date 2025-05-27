@@ -2,11 +2,21 @@
     "version": 2,
     "routes": [
         { "handle": "filesystem" },
+        { "src": "/assets/(.*)", "dest": "/assets/$1" },
+        { "src": "/js/(.*)", "dest": "/js/$1" },
         { "src": "/(.*)", "dest": "/index.html" }
     ],
     "builds": [
         {
             "src": "public/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "assets/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "js/**",
             "use": "@vercel/static"
         }
     ]
