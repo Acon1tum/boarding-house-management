@@ -37,17 +37,18 @@
         <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
             <h3 class="text-lg font-semibold text-gray-700 mb-4">📋 Active Bills</h3>
             <div class="overflow-x-auto">
-                <table class="w-full border-collapse border border-gray-300">
+                <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
                     <thead>
-                        <tr class="bg-gray-200 text-gray-700">
+                        <tr class="bg-blue-100 text-blue-900">
                             <th class="p-3 text-left">Amount</th>
                             <th class="p-3 text-left">Due Date</th>
                             <th class="p-3 text-left">Status</th>
+                            <th class="p-3 text-left">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="billListTable" class="bg-white divide-y divide-gray-300">
                         <tr>
-                            <td class="p-3 text-gray-600 text-center" colspan="3">Loading active bills...</td>
+                            <td class="p-3 text-gray-600 text-center" colspan="4">Loading active bills...</td>
                         </tr>
                     </tbody>
                 </table>

@@ -135,19 +135,20 @@ async function approveRequest(requestId, roomId) {
             throw new Error("Error fetching booking request");
         }
 
-        // Check if tenant already has an active booking
-        const { data: activeBookings, error: activeBookingsError } = await supabase
+        // Check if tenant already has an active stay in the same room
+        const { data: activeStay, error: activeStayError } = await supabase
             .from("room_tenants")
             .select("*")
             .eq("tenant_id", request.tenant_id)
+            .eq("room_id", roomId)
             .is("end_date", null);
 
-        if (activeBookingsError) {
-            throw new Error("Error checking active bookings");
+        if (activeStayError) {
+            throw new Error("Error checking active stays for this room");
         }
 
-        if (activeBookings && activeBookings.length > 0) {
-            alert("Cannot approve request: Tenant already has an active booking");
+        if (activeStay && activeStay.length > 0) {
+            alert("Cannot approve request: Tenant already has an active stay in this room");
             return;
         }
 
