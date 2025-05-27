@@ -12,7 +12,7 @@ async function fetchBookingStatus() {
 
     const { data: tenancies, error } = await supabase
         .from("room_tenants")
-        .select("id, start_date, end_date, rooms(room_number, status, price)")
+        .select("id, start_date, end_date, rooms(room_number, status, price, image_url, image_base64)")
         .eq("tenant_id", user.id)
         .is("end_date", null);
 
@@ -35,11 +35,14 @@ async function fetchBookingStatus() {
     let html = `<h3 class="text-xl font-semibold">Your Bookings</h3>`;
     tenancies.forEach(tenancy => {
         html += `
-            <div class="border-b py-4">
-                <p class="text-lg">Room: ${tenancy.rooms.room_number}</p>
-                <p>Price: ${tenancy.rooms.price.toFixed(2)} PHP / month</p>
-                <p>Start Date: ${new Date(tenancy.start_date).toLocaleDateString()}</p>
-                ${tenancy.end_date ? `<p>End Date: ${new Date(tenancy.end_date).toLocaleDateString()}</p>` : ""}
+            <div class="border-b py-4 flex flex-row-reverse items-center gap-4">
+                ${tenancy.rooms.image_url || tenancy.rooms.image_base64 ? `<img src="${tenancy.rooms.image_url || tenancy.rooms.image_base64}" alt="Room Image" class="w-24 h-24 object-cover rounded border" />` : ''}
+                <div class="flex-1">
+                    <p class="text-lg">Room: ${tenancy.rooms.room_number}</p>
+                    <p>Price: ${tenancy.rooms.price.toFixed(2)} PHP / month</p>
+                    <p>Start Date: ${new Date(tenancy.start_date).toLocaleDateString()}</p>
+                    ${tenancy.end_date ? `<p>End Date: ${new Date(tenancy.end_date).toLocaleDateString()}</p>` : ""}
+                </div>
             </div>
         `;
     });
