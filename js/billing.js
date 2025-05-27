@@ -124,7 +124,8 @@ async function fetchActiveBills() {
         bills.forEach(bill => {
             const dueDate = new Date(bill.due_date);
             const isOverdue = dueDate < new Date() && bill.status === "pending";
-            const showPay = (bill.status === "pending" || bill.status === "pending_payment") && !isOverdue;
+            const showPay = bill.status === "pending" && !isOverdue;
+            const isDisabled = bill.status === "pending_payment";
             
             const row = document.createElement("tr");
             row.innerHTML = `
@@ -137,6 +138,7 @@ async function fetchActiveBills() {
                 </td>
                 <td class="p-3">
                     ${showPay ? `<button class="pay-bill-btn bg-green-500 hover:bg-green-600 focus:ring-2 focus:ring-green-400 text-white font-semibold px-4 py-2 rounded shadow transition-colors duration-150" data-id="${bill.id}" data-amount="${bill.amount}">Pay</button>` : ''}
+                    ${isDisabled ? `<button class="bg-gray-400 text-white font-semibold px-4 py-2 rounded shadow opacity-60 cursor-not-allowed" disabled>Pay</button>` : ''}
                 </td>
             `;
             billListTable.appendChild(row);
