@@ -33,14 +33,18 @@ async function fetchAllBills() {
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
             <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
-            <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : "text-green-500"}">
-                ${bill.status}
+            <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : bill.status === "paid" ? "text-green-500" : bill.status === "pending_payment" ? "text-blue-500" : "text-gray-500"}">
+                ${bill.status === "pending" ? "pending" : bill.status === "paid" ? "paid" : bill.status === "pending_payment" ? "pending payment" : bill.status}
             </td>
             <td class="p-3 flex gap-2">
                 ${bill.status === "pending" ? `
                     <button class="bg-green-500 text-white px-2 py-1 rounded mark-paid-btn" data-id="${bill.id}" data-amount="${bill.amount}">
                         Mark Paid
                     </button>
+                ` : bill.status === "pending_payment" ? `
+                    <button class="bg-blue-500 text-white px-2 py-1 rounded view-proof-btn" data-id="${bill.id}">View Proof</button>
+                    <button class="bg-green-500 text-white px-2 py-1 rounded accept-payment-btn" data-id="${bill.id}">Accept</button>
+                    <button class="bg-red-500 text-white px-2 py-1 rounded reject-payment-btn" data-id="${bill.id}">Reject</button>
                 ` : `
                     <button class="bg-green-500 text-white px-2 py-1 rounded opacity-50 cursor-not-allowed" disabled>
                         Mark Paid
@@ -99,12 +103,12 @@ async function generateBills() {
         const nextMonth = new Date(currentDate);
         nextMonth.setMonth(currentDate.getMonth() + 1);
 
-        // Fetch existing bills for this month
+        // Fetch all existing bills for all tenants for the next bill period (by exact date)
+        const nextBillDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), currentDate.getDate());
         const { data: existingBills, error: billsError } = await supabase
             .from("bills")
-            .select("tenant_id")
-            .gte("due_date", currentDate.toISOString())
-            .lte("due_date", nextMonth.toISOString());
+            .select("tenant_id, due_date")
+            .eq("due_date", nextBillDate.toISOString().split('T')[0]);
 
         if (billsError) {
             console.error("Error checking existing bills:", billsError);
@@ -112,16 +116,16 @@ async function generateBills() {
             return;
         }
 
-        // Create a set of tenant IDs that already have bills
+        // Create a set of tenant_id for which a bill already exists for the next bill date
         const tenantsWithBills = new Set(existingBills?.map(bill => bill.tenant_id) || []);
 
-        // Prepare bills to insert
+        // Prepare bills to insert (only for tenants who do not have a bill for the next bill date)
         const billsToInsert = tenancies
             .filter(tenancy => !tenantsWithBills.has(tenancy.tenant_id))
             .map(tenancy => ({
                 tenant_id: tenancy.tenant_id,
                 amount: tenancy.rooms.price, // Use the room price as the bill amount
-                due_date: nextMonth.toISOString(),
+                due_date: nextBillDate.toISOString().split('T')[0],
                 status: "pending"
             }));
 
@@ -170,6 +174,40 @@ function attachEventListeners() {
         button.addEventListener("click", async () => {
             const billId = button.getAttribute("data-id");
             await printReceiptForPaidBill(billId);
+        });
+    });
+
+    document.querySelectorAll(".view-proof-btn").forEach(button => {
+        button.addEventListener("click", async () => {
+            const billId = button.getAttribute("data-id");
+            // Fetch payment proof and show in modal
+            const { data, error } = await supabase.from("payment_proofs").select("image_url").eq("bill_id", billId).eq("status", "pending").single();
+            if (data && data.image_url) {
+                // Show modal with image (implement modal if not present)
+                showProofModal(data.image_url);
+            } else {
+                alert("No payment proof found.");
+            }
+        });
+    });
+
+    document.querySelectorAll(".accept-payment-btn").forEach(button => {
+        button.addEventListener("click", async () => {
+            const billId = button.getAttribute("data-id");
+            // Update bill to paid, payment_proofs to approved
+            await supabase.from("bills").update({ status: "paid" }).eq("id", billId);
+            await supabase.from("payment_proofs").update({ status: "approved" }).eq("bill_id", billId).eq("status", "pending");
+            fetchAllBills();
+        });
+    });
+
+    document.querySelectorAll(".reject-payment-btn").forEach(button => {
+        button.addEventListener("click", async () => {
+            const billId = button.getAttribute("data-id");
+            // Update bill to pending, payment_proofs to rejected
+            await supabase.from("bills").update({ status: "pending" }).eq("id", billId);
+            await supabase.from("payment_proofs").update({ status: "rejected" }).eq("bill_id", billId).eq("status", "pending");
+            fetchAllBills();
         });
     });
 }
