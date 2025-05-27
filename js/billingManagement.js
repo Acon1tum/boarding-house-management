@@ -451,9 +451,49 @@ async function printReceiptForPaidBill(id) {
     }
 }
 
+// Fetch and display payment proofs
+async function fetchAllProofs() {
+    const { data: proofs, error } = await supabase
+        .from("payment_proofs")
+        .select("id, bill_id, tenant_id, image_url, status, submitted_at, users:tenant_id(first_name, last_name, email)")
+        .order("submitted_at", { ascending: false });
+
+    const proofListTable = document.getElementById("proofListTable");
+    proofListTable.innerHTML = "";
+
+    if (error || !proofs || proofs.length === 0) {
+        proofListTable.innerHTML = `<tr><td colspan='5' class='p-3 text-center text-gray-500'>No payment proofs found.</td></tr>`;
+        return;
+    }
+
+    proofs.forEach(proof => {
+        const tenant = proof.users ? `${proof.users.first_name} ${proof.users.last_name} (${proof.users.email})` : proof.tenant_id;
+        const statusClass = proof.status === 'approved' ? 'text-green-500' : proof.status === 'rejected' ? 'text-red-500' : 'text-yellow-500';
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class='p-3'>${proof.bill_id}</td>
+            <td class='p-3'>${tenant}</td>
+            <td class='p-3'>${new Date(proof.submitted_at).toLocaleString()}</td>
+            <td class='p-3 font-semibold ${statusClass}'>${proof.status}</td>
+            <td class='p-3'>
+                <button class='bg-blue-500 text-white px-2 py-1 rounded view-proof-btn' data-img='${proof.image_url}'>View Proof</button>
+            </td>
+        `;
+        proofListTable.appendChild(row);
+    });
+
+    // Attach event listeners for view buttons
+    document.querySelectorAll(".view-proof-btn").forEach(button => {
+        button.addEventListener("click", () => {
+            showProofModal(button.getAttribute("data-img"));
+        });
+    });
+}
+
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
     fetchAllBills();
+    fetchAllProofs();
     
     // Attach event listener to the existing generate bills button
     const generateBillsBtn = document.getElementById("generateBillsBtn");

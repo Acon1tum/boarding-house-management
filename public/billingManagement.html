@@ -58,6 +58,34 @@
                 </table>
             </div>
         </div>
+
+        <!-- Proof of Payments Table -->
+        <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 class="text-xl font-semibold mb-4">Proof of Payments</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="p-3 text-left">Bill ID</th>
+                            <th class="p-3 text-left">Tenant</th>
+                            <th class="p-3 text-left">Submitted At</th>
+                            <th class="p-3 text-left">Status</th>
+                            <th class="p-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="proofListTable">
+                        <tr>
+                            <td colspan="5" class="p-3 text-center text-gray-500">Loading payment proofs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="proofPagination" class="flex items-center justify-end gap-4 mt-4">
+                <button id="prevProofPage" class="bg-blue-500 text-white px-3 py-1 rounded disabled:opacity-50" disabled>Previous</button>
+                <span id="proofPageInfo" class="text-gray-700">Page 1</span>
+                <button id="nextProofPage" class="bg-blue-500 text-white px-3 py-1 rounded disabled:opacity-50">Next</button>
+            </div>
+        </div>
     </div>
 
     <!-- Confirmation Modal -->
