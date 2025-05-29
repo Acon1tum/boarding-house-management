@@ -33,15 +33,15 @@ async function fetchAllBills() {
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
             <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
-            <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : bill.status === "paid" ? "text-green-500" : bill.status === "pending_payment" ? "text-blue-500" : "text-gray-500"}">
-                ${bill.status === "pending" ? "pending" : bill.status === "paid" ? "paid" : bill.status === "pending_payment" ? "pending payment" : bill.status}
+            <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : bill.status === "paid" ? "text-green-500" : bill.status === "verifying_payment" ? "text-blue-500" : "text-gray-500"}">
+                ${bill.status === "pending" ? "pending" : bill.status === "paid" ? "paid" : bill.status === "verifying_payment" ? "verifying payment" : bill.status}
             </td>
             <td class="p-3 flex gap-2">
                 ${bill.status === "pending" ? `
                     <button class="bg-green-500 text-white px-2 py-1 rounded mark-paid-btn" data-id="${bill.id}" data-amount="${bill.amount}">
                         Mark Paid
                     </button>
-                ` : bill.status === "pending_payment" ? `
+                ` : bill.status === "verifying_payment" ? `
                     <button class="bg-blue-500 text-white px-2 py-1 rounded view-proof-btn" data-id="${bill.id}">View Proof</button>
                     <button class="bg-green-500 text-white px-2 py-1 rounded accept-payment-btn" data-id="${bill.id}">Accept</button>
                     <button class="bg-red-500 text-white px-2 py-1 rounded reject-payment-btn" data-id="${bill.id}">Reject</button>

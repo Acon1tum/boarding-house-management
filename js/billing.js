@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Payment proof submitted! Awaiting verification.");
                     paymentModal.classList.add("hidden");
                     fileInput.value = "";
-                    await supabase.from("bills").update({ status: "pending_payment" }).eq("id", currentBillId);
+                    await supabase.from("bills").update({ status: "verifying_payment" }).eq("id", currentBillId);
                 }
             };
             reader.readAsDataURL(file);
@@ -95,7 +95,7 @@ async function fetchActiveBills() {
             .from("bills")
             .select("*")
             .eq("tenant_id", user.id)
-            .in("status", ["pending", "pending_payment"])
+            .in("status", ["pending", "verifying_payment"])
             .order("due_date", { ascending: true });
 
         if (error) {
@@ -125,15 +125,15 @@ async function fetchActiveBills() {
             const dueDate = new Date(bill.due_date);
             const isOverdue = dueDate < new Date() && bill.status === "pending";
             const showPay = bill.status === "pending" && !isOverdue;
-            const isDisabled = bill.status === "pending_payment";
+            const isDisabled = bill.status === "verifying_payment";
             
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
                 <td class="p-3">${dueDate.toLocaleDateString()}</td>
                 <td class="p-3">
-                    <span class="${bill.status === 'overdue' ? 'text-red-500' : bill.status === 'pending_payment' ? 'text-blue-500' : 'text-yellow-500'}">
-                        ${bill.status === 'overdue' ? 'Overdue' : bill.status === 'pending_payment' ? 'Pending Payment' : 'Pending'}
+                    <span class="${bill.status === 'overdue' ? 'text-red-500' : bill.status === 'verifying_payment' ? 'text-blue-500' : 'text-yellow-500'}">
+                        ${bill.status === 'overdue' ? 'Overdue' : bill.status === 'verifying_payment' ? 'Verifying Payment' : 'Pending'}
                     </span>
                 </td>
                 <td class="p-3">
@@ -239,8 +239,8 @@ function getStatusClass(status) {
             return 'text-green-500';   // Green for paid
         case 'overdue':
             return 'text-red-500';     // Red for overdue
-        case 'pending_payment':
-            return 'text-blue-500';     // Blue for pending payment
+        case 'verifying_payment':
+            return 'text-blue-500';     // Blue for verifying payment
         default:
             return 'text-gray-500';    // Gray for unknown
     }
