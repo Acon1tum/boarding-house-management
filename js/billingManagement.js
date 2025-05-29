@@ -34,6 +34,20 @@ async function fetchAllBills() {
     applyFilters();
 }
 
+// Get month name from date
+function getMonthName(date) {
+    return new Date(date).toLocaleString('default', { month: 'long' });
+}
+
+// Check if tenant has paid for a specific month
+function hasPaidForMonth(bills, tenantId, month) {
+    return bills.some(bill => 
+        bill.tenant_id === tenantId && 
+        new Date(bill.due_date).getMonth() + 1 === month && 
+        bill.status === "paid"
+    );
+}
+
 // Apply filters to bills
 function applyFilters() {
     const monthFilter = document.getElementById("monthFilter").value;
@@ -91,9 +105,17 @@ function displayBills() {
     document.getElementById("prevPage").disabled = currentPage === 1;
     document.getElementById("nextPage").disabled = currentPage === totalPages;
 
-    billListTable.innerHTML = currentPageBills.map(bill => `
+    billListTable.innerHTML = currentPageBills.map(bill => {
+        const billMonth = new Date(bill.due_date).getMonth() + 1;
+        const monthName = getMonthName(bill.due_date);
+        const isPaid = hasPaidForMonth(allBills, bill.tenant_id, billMonth);
+        
+        return `
         <tr class="border-b">
-            <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
+            <td class="p-3">
+                ${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})
+                ${isPaid ? `<span class="ml-2 text-sm text-green-500">(Paid for ${monthName})</span>` : ''}
+            </td>
             <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
             <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : bill.status === "paid" ? "text-green-500" : bill.status === "verifying_payment" ? "text-blue-500" : "text-gray-500"}">
@@ -123,7 +145,7 @@ function displayBills() {
                 </button>
             </td>
         </tr>
-    `).join("");
+    `}).join("");
 
     attachEventListeners();
 }
