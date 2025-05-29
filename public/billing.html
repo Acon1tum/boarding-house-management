@@ -195,7 +195,7 @@
                     let statusClass = getStatusClass(bill.status);
                     billHistoryTable.innerHTML += `
                         <tr>
-                            <td class="p-3">₱${bill.amount}</td>
+                            <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
                             <td class="p-3 ${statusClass}">${bill.status}</td>
                         </tr>

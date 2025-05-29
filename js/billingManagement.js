@@ -31,7 +31,7 @@ async function fetchAllBills() {
     billListTable.innerHTML = data.map(bill => `
         <tr class="border-b">
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
-            <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
+            <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
             <td class="p-3 font-semibold ${bill.status === "pending" ? "text-red-500" : bill.status === "paid" ? "text-green-500" : bill.status === "verifying_payment" ? "text-blue-500" : "text-gray-500"}">
                 ${bill.status === "pending" ? "pending" : bill.status === "paid" ? "paid" : bill.status === "verifying_payment" ? "verifying payment" : bill.status}
@@ -214,9 +214,9 @@ function attachEventListeners() {
 
 // Open Confirmation Modal for Mark as Paid
 function openConfirmationModal(billId, amount) {
-    // Convert amount to a number before using toFixed()
+    // Convert amount to a number before using toLocaleString()
     const numericAmount = parseFloat(amount);
-    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>${numericAmount.toFixed(2)} PHP</strong> as paid?`;
+    document.getElementById("confirmationMessage").innerHTML = `Are you sure you want to mark this bill of <strong>₱${numericAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong> as paid?`;
     document.getElementById("confirmMarkPaidBtn").setAttribute("data-id", billId);
     document.getElementById("confirmationModal").classList.remove("hidden");
 }
@@ -379,7 +379,7 @@ function printReceipt(bill) {
                 <div class="details">
                     <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
                     <p><strong>Tenant:</strong> ${bill.users.first_name} ${bill.users.last_name}</p>
-                    <p class="amount"><strong>Amount:</strong> ${bill.amount.toFixed(2)} PHP</p>
+                    <p class="amount"><strong>Amount:</strong> ₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                     <p><strong>Due Date:</strong> ${new Date(bill.due_date).toLocaleDateString()}</p>
                     <p><strong>Status:</strong> <span class="status">PAID</span></p>
                 </div>

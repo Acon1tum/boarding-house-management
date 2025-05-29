@@ -92,7 +92,7 @@ async function fetchRooms() {
                     <td class="p-2">${room.bedrooms}</td>
                     <td class="p-2">${room.capacity}</td>
                     <td class="p-2 ${statusClass}">${statusText}</td>
-                    <td class="p-2">₱${room.price.toFixed(2)}</td>
+                    <td class="p-2">₱${Number(room.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="p-2">
                         <button onclick="editRoom('${room.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
                         <button onclick="deleteRoom('${room.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>

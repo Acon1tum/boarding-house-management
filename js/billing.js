@@ -129,7 +129,7 @@ async function fetchActiveBills() {
             
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td class="p-3">${bill.amount.toFixed(2)} PHP</td>
+                <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td class="p-3">${dueDate.toLocaleDateString()}</td>
                 <td class="p-3">
                     <span class="${bill.status === 'overdue' ? 'text-red-500' : bill.status === 'verifying_payment' ? 'text-blue-500' : 'text-yellow-500'}">
@@ -222,7 +222,7 @@ function displayBillingHistory(bills) {
         const statusClass = getStatusClass(bill.status);
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td class="p-3">${Number(bill.amount).toFixed(2)} PHP</td>
+            <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="p-3">${bill.payment_date ? new Date(bill.payment_date).toDateString() : new Date(bill.due_date).toDateString()}</td>
             <td class="p-3 ${statusClass}">${bill.status}</td>
         `;

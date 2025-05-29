@@ -197,7 +197,7 @@ window.viewBilling = async function (tenantId) {
                 
                 activeBillsTable.innerHTML += `
                     <tr>
-                        <td class="p-2">₱${bill.amount}</td>
+                        <td class="p-2">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="p-2">${new Date(bill.due_date).toLocaleDateString()}</td>
                         <td class="p-2 ${statusClass}">${bill.status}</td>
                     </tr>
@@ -218,7 +218,7 @@ window.viewBilling = async function (tenantId) {
                 
                 billingHistoryTable.innerHTML += `
                     <tr>
-                        <td class="p-2">₱${record.amount}</td>
+                        <td class="p-2">₱${Number(record.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="p-2">${new Date(record.due_date).toLocaleDateString()}</td>
                         <td class="p-2 ${statusClass}">${record.status}</td>
                     </tr>

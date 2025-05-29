@@ -39,7 +39,7 @@ async function fetchBookingStatus() {
                 ${tenancy.rooms.image_url || tenancy.rooms.image_base64 ? `<img src="${tenancy.rooms.image_url || tenancy.rooms.image_base64}" alt="Room Image" class="w-24 h-24 object-cover rounded border" />` : ''}
                 <div class="flex-1">
                     <p class="text-lg">Room: ${tenancy.rooms.room_number}</p>
-                    <p>Price: ${tenancy.rooms.price.toFixed(2)} PHP / month</p>
+                    <p>Price: ₱${tenancy.rooms.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / month</p>
                     <p>Start Date: ${new Date(tenancy.start_date).toLocaleDateString()}</p>
                     ${tenancy.end_date ? `<p>End Date: ${new Date(tenancy.end_date).toLocaleDateString()}</p>` : ""}
                 </div>
@@ -63,7 +63,7 @@ async function fetchBillingNotifications() {
         .from("bills")
         .select("*")
         .eq("tenant_id", user.id)
-        .eq("status", "pending");
+        .in("status", ["pending", "verifying_payment"]);
 
     const billingDiv = document.getElementById("billingNotifications");
 
@@ -78,13 +78,18 @@ async function fetchBillingNotifications() {
         return;
     }
 
-    billingDiv.innerHTML = bills.map(bill => `
-        <div class="border-b py-2">
-            <p>Amount: <strong>₱${bill.amount}</strong></p>
-            <p>Due Date: ${new Date(bill.due_date).toDateString()}</p>
-            <p>Status: <span class="text-red-500 font-semibold">${bill.status}</span></p>
-        </div>
-    `).join("");
+    billingDiv.innerHTML = bills.map(bill => {
+        const statusClass = bill.status === "verifying_payment" ? "text-blue-500" : "text-red-500";
+        const statusText = bill.status === "verifying_payment" ? "Verifying Payment" : "Pending";
+        
+        return `
+            <div class="border-b py-2">
+                <p>Amount: <strong>₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></p>
+                <p>Due Date: ${new Date(bill.due_date).toDateString()}</p>
+                <p>Status: <span class="${statusClass} font-semibold">${statusText}</span></p>
+            </div>
+        `;
+    }).join("");
 }
 
 // Initialize Dashboard

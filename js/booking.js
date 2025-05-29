@@ -133,7 +133,7 @@ async function fetchRooms() {
             <div class="p-4 border rounded-lg bg-white shadow-lg">
                 <img src="${imageSrc}" alt="Room Image" class="w-full h-48 object-cover rounded">
                 <p class="text-lg font-bold">Room ${room.room_number}</p>
-                <p class="text-gray-600">Price: <span class="font-semibold">${room.price.toFixed(2)}</span> PHP/month</p>
+                <p class="text-gray-600">Price: <span class="font-semibold">₱${room.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span> /month</p>
                 <p class="text-gray-600">Bedrooms: ${room.bedrooms}</p>
                 <p class="text-gray-600">Capacity: ${room.capacity} people</p>
                 <p class="text-gray-600">Current Occupants: ${currentOccupants}</p>
