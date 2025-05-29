@@ -58,6 +58,17 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Pagination Controls -->
+                <div class="mt-4 flex justify-between items-center">
+                    <div class="text-gray-600">
+                        Showing <span id="startIndex">0</span> to <span id="endIndex">0</span> of <span id="totalUsers">0</span> users
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="prevPageBtn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded disabled:opacity-50" disabled>Previous</button>
+                        <span id="currentPage" class="px-4 py-2 text-gray-700">Page 1</span>
+                        <button id="nextPageBtn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded disabled:opacity-50" disabled>Next</button>
+                    </div>
+                </div>
             </div>
         
     </main>

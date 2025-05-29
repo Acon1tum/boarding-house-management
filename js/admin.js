@@ -1,5 +1,11 @@
 import { supabase } from "../db/supabase.js";
 
+// Pagination state
+let currentPage = 1;
+const usersPerPage = 10;
+let totalUsers = 0;
+let allUsers = [];
+
 // Ensure admin is logged in
 const user = JSON.parse(localStorage.getItem("user"));
 if (!user || user.role !== "admin") {
@@ -15,10 +21,31 @@ async function fetchUsers() {
         return;
     }
 
+    allUsers = data;
+    totalUsers = data.length;
+    displayCurrentPage();
+}
+
+function displayCurrentPage() {
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = Math.min(startIndex + usersPerPage, totalUsers);
+    const currentUsers = allUsers.slice(startIndex, endIndex);
+
+    // Update pagination info
+    document.getElementById("startIndex").textContent = startIndex + 1;
+    document.getElementById("endIndex").textContent = endIndex;
+    document.getElementById("totalUsers").textContent = totalUsers;
+    document.getElementById("currentPage").textContent = `Page ${currentPage}`;
+
+    // Update button states
+    document.getElementById("prevPageBtn").disabled = currentPage === 1;
+    document.getElementById("nextPageBtn").disabled = endIndex >= totalUsers;
+
+    // Update table
     const userTable = document.getElementById("userTable");
     userTable.innerHTML = "";
 
-    data.forEach(user => {
+    currentUsers.forEach(user => {
         userTable.innerHTML += `
             <tr class="border">
                 <td class="p-2">${user.first_name} ${user.last_name}</td>
@@ -32,6 +59,7 @@ async function fetchUsers() {
         `;
     });
 
+    // Reattach event listeners
     document.querySelectorAll(".editUserBtn").forEach(btn => {
         btn.addEventListener("click", () => openEditUser(btn.dataset.id));
     });
@@ -40,6 +68,22 @@ async function fetchUsers() {
         btn.addEventListener("click", () => deleteUser(btn.dataset.id));
     });
 }
+
+// Pagination event listeners
+document.getElementById("prevPageBtn").addEventListener("click", () => {
+    if (currentPage > 1) {
+        currentPage--;
+        displayCurrentPage();
+    }
+});
+
+document.getElementById("nextPageBtn").addEventListener("click", () => {
+    const maxPage = Math.ceil(totalUsers / usersPerPage);
+    if (currentPage < maxPage) {
+        currentPage++;
+        displayCurrentPage();
+    }
+});
 
 // Open Add User Modal
 document.getElementById("addUserBtn").addEventListener("click", () => {
