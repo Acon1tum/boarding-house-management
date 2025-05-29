@@ -160,6 +160,15 @@
         </div>
     </div>
 
+    <!-- Profile Picture Modal -->
+    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
+            <button id="closeProfileModal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            <h3 class="text-xl font-bold mb-4">Profile Picture</h3>
+            <img id="profileImage" src="" alt="Profile Picture" class="w-full max-h-96 object-contain border rounded" />
+        </div>
+    </div>
+
     <script>
         // Check if user is logged in and is a landlord
         const user = JSON.parse(localStorage.getItem("user"));
@@ -181,9 +190,21 @@
             modal.classList.remove('hidden');
         }
 
+        function showProfileModal(imageUrl) {
+            const modal = document.getElementById('profileModal');
+            const img = document.getElementById('profileImage');
+            img.src = imageUrl;
+            modal.classList.remove('hidden');
+        }
+
         document.getElementById('closeProofModal').addEventListener('click', function() {
             document.getElementById('proofModal').classList.add('hidden');
             document.getElementById('proofImage').src = '';
+        });
+
+        document.getElementById('closeProfileModal').addEventListener('click', function() {
+            document.getElementById('profileModal').classList.add('hidden');
+            document.getElementById('profileImage').src = '';
         });
     </script>
 </body>

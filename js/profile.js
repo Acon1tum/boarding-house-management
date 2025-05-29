@@ -33,8 +33,38 @@ async function getUserProfile() {
     document.getElementById("address").value = data.address || "";
     document.getElementById("bio").value = data.bio || "";
 
+    // Display profile picture if exists
+    if (data.profile_picture) {
+        document.getElementById("profileImage").src = data.profile_picture;
+    }
+
     // Allow tenants to edit everything
     document.getElementById("updateBtn").style.display = "block";
+}
+
+// Handle image upload and conversion to base64
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Image size should be less than 2MB');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64String = e.target.result;
+        document.getElementById("profileImage").src = base64String;
+    };
+    reader.readAsDataURL(file);
 }
 
 // Update Profile (for all users including tenants)
@@ -52,6 +82,7 @@ async function updateProfile(event) {
     let phone = document.getElementById("phone").value;
     const address = document.getElementById("address").value;
     const bio = document.getElementById("bio").value;
+    const profilePicture = document.getElementById("profileImage").src;
 
     // Validate phone number (must be 11 digits and only numbers)
     const phoneRegex = /^[0-9]{11}$/;
@@ -62,7 +93,14 @@ async function updateProfile(event) {
 
     const { error } = await supabase
         .from("users")
-        .update({ first_name: firstName, last_name: lastName, phone, address, bio })
+        .update({ 
+            first_name: firstName, 
+            last_name: lastName, 
+            phone, 
+            address, 
+            bio,
+            profile_picture: profilePicture
+        })
         .eq("id", user.id);
 
     if (error) {
@@ -72,9 +110,9 @@ async function updateProfile(event) {
 
         // Redirect user based on their role
         if (user.role === "landlord") {
-            window.location.href = "landlordDashboard.html"; // Redirect to landlord dashboard
+            window.location.href = "landlordDashboard.html";
         } else {
-            window.location.href = "dashboard.html"; // Redirect to tenant dashboard
+            window.location.href = "dashboard.html";
         }
     }
 }
@@ -83,9 +121,9 @@ async function updateProfile(event) {
 function returnToDashboard() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user.role === "landlord") {
-        window.location.href = "landlordDashboard.html"; // Redirect to landlord dashboard
+        window.location.href = "landlordDashboard.html";
     } else {
-        window.location.href = "dashboard.html"; // Redirect to tenant dashboard
+        window.location.href = "dashboard.html";
     }
 }
 
@@ -93,3 +131,4 @@ function returnToDashboard() {
 document.addEventListener("DOMContentLoaded", getUserProfile);
 document.getElementById("profileForm")?.addEventListener("submit", updateProfile);
 document.getElementById("returnDashboardBtn")?.addEventListener("click", returnToDashboard);
+document.getElementById("imageUpload")?.addEventListener("change", handleImageUpload);

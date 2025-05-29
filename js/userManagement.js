@@ -5,6 +5,26 @@ let currentPage = 1;
 let totalPages = 1;
 let sortBy = "first_name";
 
+// Default placeholder avatar (a simple gray circle with user icon)
+const DEFAULT_AVATAR = `data:image/svg+xml;base64,${btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10" fill="#e5e7eb"/>
+    <path d="M12 8v4M8 12h8" stroke="#6b7280"/>
+    <circle cx="12" cy="12" r="3" fill="#6b7280"/>
+</svg>
+`)}`;
+
+// Function to show enlarged profile picture
+function showEnlargedProfilePicture(imageUrl) {
+    const modal = document.getElementById('profileModal');
+    const img = document.getElementById('profileImage');
+    img.src = imageUrl;
+    modal.classList.remove('hidden');
+}
+
+// Make function available globally
+window.showEnlargedProfilePicture = showEnlargedProfilePicture;
+
 async function fetchTenants(searchQuery = null) {
     let query = supabase.from("users").select("*", { count: "exact" }).eq("role", "tenant");
 
@@ -31,12 +51,25 @@ async function fetchTenants(searchQuery = null) {
     const tenantList = document.getElementById("tenantList");
     tenantList.innerHTML = data.map(tenant => `
         <tr class="border-b">
-            <td class="p-2">${tenant.first_name} ${tenant.last_name}</td>
-            <td class="p-2">${tenant.email}</td>
             <td class="p-2">
-                <button onclick="editTenant('${tenant.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                <button onclick="deleteTenant('${tenant.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                <button onclick="viewBilling('${tenant.id}')" class="bg-green-500 text-white px-2 py-1 rounded">View</button>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <img src="${tenant.profile_picture || DEFAULT_AVATAR}" 
+                            alt="Profile" 
+                            class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                            onerror="this.src='${DEFAULT_AVATAR}'"
+                            onclick="showEnlargedProfilePicture('${tenant.profile_picture || DEFAULT_AVATAR}')">
+                    </div>
+                    <div>
+                        <div class="font-medium">${tenant.first_name} ${tenant.last_name}</div>
+                        <div class="text-sm text-gray-500">${tenant.email}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="p-2">
+                <button onclick="editTenant('${tenant.id}')" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition">Edit</button>
+                <button onclick="deleteTenant('${tenant.id}')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition">Delete</button>
+                <button onclick="viewBilling('${tenant.id}')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition">View</button>
             </td>
         </tr>
     `).join("");

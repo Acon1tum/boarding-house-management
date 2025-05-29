@@ -1,5 +1,14 @@
 import { supabase } from "../db/supabase.js";
 
+// Default placeholder avatar (a simple gray circle with user icon)
+const DEFAULT_AVATAR = `data:image/svg+xml;base64,${btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10" fill="#e5e7eb"/>
+    <path d="M12 8v4M8 12h8" stroke="#6b7280"/>
+    <circle cx="12" cy="12" r="3" fill="#6b7280"/>
+</svg>
+`)}`;
+
 // Fetch Booking Requests
 async function fetchBookings() {
     try {
@@ -35,7 +44,7 @@ async function fetchBookings() {
         const tenantIds = bookingRequests.map(request => request.tenant_id);
         const { data: tenants, error: tenantsError } = await supabase
             .from("users")
-            .select("id, first_name, last_name, email, phone")
+            .select("id, first_name, last_name, email, phone, profile_picture")
             .in("id", tenantIds);
 
         if (tenantsError) {
@@ -69,6 +78,8 @@ async function fetchBookings() {
                 const roomNumber = request.rooms ? request.rooms.room_number : "N/A";
                 const tenant = tenantMap[request.tenant_id] || null;
                 const tenantName = tenant ? `${tenant.first_name} ${tenant.last_name}` : "Unknown Tenant";
+                const tenantEmail = tenant ? tenant.email : "";
+                const profilePicture = tenant?.profile_picture || DEFAULT_AVATAR;
                 const currentOccupants = occupancyMap[request.rooms?.id] || 0;
                 const roomCapacity = request.rooms?.capacity || 0;
                 const isRoomFull = currentOccupants >= roomCapacity;
@@ -97,7 +108,20 @@ async function fetchBookings() {
 
                 return `
                     <tr class="border-b">
-                        <td class="p-3">${tenantName}</td>
+                        <td class="p-3">
+                            <div class="flex items-center gap-3">
+                                <div class="relative">
+                                    <img src="${profilePicture}" 
+                                        alt="Profile" 
+                                        class="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                                        onerror="this.src='${DEFAULT_AVATAR}'">
+                                </div>
+                                <div>
+                                    <div class="font-medium">${tenantName}</div>
+                                    <div class="text-sm text-gray-500">${tenantEmail}</div>
+                                </div>
+                            </div>
+                        </td>
                         <td class="p-3">Room ${roomNumber}</td>
                         <td class="p-3">${new Date(request.request_date).toLocaleDateString()}</td>
                         <td class="p-3 ${statusColorClass}">${request.status}</td>

@@ -79,8 +79,7 @@
                 <table class="w-full border-collapse">
                     <thead>
                         <tr class="bg-gray-200 text-gray-700">
-                            <th class="p-3 text-left">Name</th>
-                            <th class="p-3 text-left">Email</th>
+                            <th class="p-3 text-left">Tenant</th>
                             <th class="p-3 text-left">Actions</th>
                         </tr>
                     </thead>
@@ -192,7 +191,23 @@
     </div>
 </div>
 
+<!-- Profile Picture Modal -->
+<div id="profileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96 relative">
+        <button id="closeProfileModal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+        <h3 class="text-xl font-bold mb-4">Profile Picture</h3>
+        <img id="profileImage" src="" alt="Profile Picture" class="w-full max-h-96 object-contain border rounded" />
+    </div>
+</div>
 
     <script type="module" src="../js/userManagement.js"></script>
+
+    <script>
+        // Add event listener for closing the profile modal
+        document.getElementById('closeProfileModal').addEventListener('click', function() {
+            document.getElementById('profileModal').classList.add('hidden');
+            document.getElementById('profileImage').src = '';
+        });
+    </script>
 </body>
 </html>

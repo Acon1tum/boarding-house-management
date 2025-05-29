@@ -23,6 +23,47 @@
                 background: linear-gradient(to bottom, #4FC3F7, #81D4FA); /* Even darker gradient for mobile screens */
             }
         }
+
+        .profile-image-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+        }
+
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .image-upload-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
+            text-align: center;
+            border-bottom-left-radius: 75px;
+            border-bottom-right-radius: 75px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .profile-image-container:hover .image-upload-overlay {
+            opacity: 1;
+        }
+
+        #imageUpload {
+            display: none;
+        }
     </style>
     
 </head>
@@ -38,6 +79,15 @@
     <div class="bg-white p-8 rounded-lg shadow-lg w-96 text-center">
         <h2 class="text-3xl font-bold text-gray-800 mb-4">👤 User Profile</h2>
         <p class="text-gray-500 mb-6">View and update your profile information</p>
+
+        <!-- Profile Image Section -->
+        <div class="profile-image-container">
+            <img id="profileImage" src="../assets/default-avatar.png" alt="Profile Picture" class="profile-image">
+            <label for="imageUpload" class="image-upload-overlay">
+                Change Photo
+            </label>
+            <input type="file" id="imageUpload" accept="image/*">
+        </div>
 
         <form id="profileForm" class="flex flex-col gap-4">
             <div class="flex gap-4">

@@ -8,6 +8,15 @@ let filteredBills = [];
 const ITEMS_PER_PAGE = 10;
 let currentPage = 1;
 
+// Default placeholder avatar (a simple gray circle with user icon)
+const DEFAULT_AVATAR = `data:image/svg+xml;base64,${btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10" fill="#e5e7eb"/>
+    <path d="M12 8v4M8 12h8" stroke="#6b7280"/>
+    <circle cx="12" cy="12" r="3" fill="#6b7280"/>
+</svg>
+`)}`;
+
 // Fetch All Bills
 async function fetchAllBills() {
     const user = getUserDetails();
@@ -15,8 +24,8 @@ async function fetchAllBills() {
 
     const { data, error } = await supabase
         .from("bills")
-        .select("id, tenant_id, amount, due_date, status, users(first_name, last_name, email)")
-        .order("due_date", { ascending: true });
+        .select("id, tenant_id, amount, due_date, status, users(first_name, last_name, email, profile_picture)")
+        .order("due_date", { ascending: false });
 
     if (error) {
         console.error("Error fetching bills:", error);
@@ -75,6 +84,14 @@ function applyFilters() {
     displayBills();
 }
 
+// Function to show enlarged profile picture
+function showEnlargedProfilePicture(imageUrl) {
+    const modal = document.getElementById('profileModal');
+    const img = document.getElementById('profileImage');
+    img.src = imageUrl;
+    modal.classList.remove('hidden');
+}
+
 // Display bills in the table
 function displayBills() {
     const billListTable = document.getElementById("billListTable");
@@ -83,7 +100,7 @@ function displayBills() {
     if (!filteredBills || filteredBills.length === 0) {
         billListTable.innerHTML = `
             <tr>
-                <td class="p-3 text-gray-500 text-center" colspan="5">No bills available.</td>
+                <td class="p-3 text-gray-500 text-center" colspan="6">No bills available.</td>
             </tr>`;
         updatePaginationControls(0);
         return;
@@ -109,12 +126,25 @@ function displayBills() {
         const billMonth = new Date(bill.due_date).getMonth() + 1;
         const monthName = getMonthName(bill.due_date);
         const isPaid = hasPaidForMonth(allBills, bill.tenant_id, billMonth);
+        const profilePicture = bill.users.profile_picture || DEFAULT_AVATAR;
         
         return `
         <tr class="border-b">
             <td class="p-3">
-                ${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})
-                ${isPaid ? `<span class="ml-2 text-sm text-green-500">(Paid for ${monthName})</span>` : ''}
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <img src="${profilePicture}" 
+                            alt="Profile" 
+                            class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                            onerror="this.src='${DEFAULT_AVATAR}'"
+                            onclick="showEnlargedProfilePicture('${profilePicture}')">
+                        <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${bill.status === 'paid' ? 'bg-green-500' : bill.status === 'verifying_payment' ? 'bg-blue-500' : 'bg-gray-400'}"></div>
+                    </div>
+                    <div>
+                        ${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})
+                        ${isPaid ? `<span class="ml-2 text-sm text-green-500">(Paid for ${monthName})</span>` : ''}
+                    </div>
+                </div>
             </td>
             <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             <td class="p-3">${new Date(bill.due_date).toDateString()}</td>
@@ -620,3 +650,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+// Make showEnlargedProfilePicture available globally
+window.showEnlargedProfilePicture = showEnlargedProfilePicture;
