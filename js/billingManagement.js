@@ -2,6 +2,12 @@
 import { supabase } from "../db/supabase.js";
 import { getUserDetails } from "./auth.js";
 
+// Store all bills globally
+let allBills = [];
+let filteredBills = [];
+const ITEMS_PER_PAGE = 10;
+let currentPage = 1;
+
 // Fetch All Bills
 async function fetchAllBills() {
     const user = getUserDetails();
@@ -17,18 +23,75 @@ async function fetchAllBills() {
         return;
     }
 
+    // Store all bills globally
+    allBills = data || [];
+    filteredBills = [...allBills];
+    
+    // Reset to first page when fetching new data
+    currentPage = 1;
+    
+    // Apply filters
+    applyFilters();
+}
+
+// Apply filters to bills
+function applyFilters() {
+    const monthFilter = document.getElementById("monthFilter").value;
+    const statusFilter = document.getElementById("statusFilter").value;
+
+    // Start with all bills
+    filteredBills = [...allBills];
+
+    // Apply month filter
+    if (monthFilter) {
+        filteredBills = filteredBills.filter(bill => {
+            const billDate = new Date(bill.due_date);
+            return billDate.getMonth() + 1 === parseInt(monthFilter);
+        });
+    }
+
+    // Apply status filter
+    if (statusFilter) {
+        filteredBills = filteredBills.filter(bill => bill.status === statusFilter);
+    }
+
+    // Reset to first page when applying new filters
+    currentPage = 1;
+    
+    displayBills();
+}
+
+// Display bills in the table
+function displayBills() {
     const billListTable = document.getElementById("billListTable");
     billListTable.innerHTML = "";
 
-    if (!data || data.length === 0) {
+    if (!filteredBills || filteredBills.length === 0) {
         billListTable.innerHTML = `
             <tr>
                 <td class="p-3 text-gray-500 text-center" colspan="5">No bills available.</td>
             </tr>`;
+        updatePaginationControls(0);
         return;
     }
 
-    billListTable.innerHTML = data.map(bill => `
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredBills.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filteredBills.length);
+    const currentPageBills = filteredBills.slice(startIndex, endIndex);
+
+    // Update pagination info
+    document.getElementById("currentPageStart").textContent = filteredBills.length === 0 ? 0 : startIndex + 1;
+    document.getElementById("currentPageEnd").textContent = endIndex;
+    document.getElementById("totalBills").textContent = filteredBills.length;
+    document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+
+    // Update pagination buttons
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = currentPage === totalPages;
+
+    billListTable.innerHTML = currentPageBills.map(bill => `
         <tr class="border-b">
             <td class="p-3">${bill.users.first_name} ${bill.users.last_name} (${bill.users.email})</td>
             <td class="p-3">₱${Number(bill.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -63,6 +126,14 @@ async function fetchAllBills() {
     `).join("");
 
     attachEventListeners();
+}
+
+// Update pagination controls
+function updatePaginationControls(totalItems) {
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = currentPage === totalPages || totalPages === 0;
+    document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages || 1}`;
 }
 
 // Generate Bills for Tenants with Approved Bookings
@@ -500,4 +571,30 @@ document.addEventListener("DOMContentLoaded", () => {
     if (generateBillsBtn) {
         generateBillsBtn.addEventListener("click", generateBills);
     }
+
+    // Add event listeners for filters
+    document.getElementById("monthFilter").addEventListener("change", applyFilters);
+    document.getElementById("statusFilter").addEventListener("change", applyFilters);
+    document.getElementById("resetFilters").addEventListener("click", () => {
+        document.getElementById("monthFilter").value = "";
+        document.getElementById("statusFilter").value = "";
+        currentPage = 1;
+        applyFilters();
+    });
+
+    // Add event listeners for pagination
+    document.getElementById("prevPage").addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            displayBills();
+        }
+    });
+
+    document.getElementById("nextPage").addEventListener("click", () => {
+        const totalPages = Math.ceil(filteredBills.length / ITEMS_PER_PAGE);
+        if (currentPage < totalPages) {
+            currentPage++;
+            displayBills();
+        }
+    });
 });
