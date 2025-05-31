@@ -92,10 +92,21 @@ async function fetchBillingNotifications() {
     }).join("");
 }
 
+// After checkAuth() and getUserDetails()
+function setWelcomeMessage() {
+    const user = getUserDetails();
+    if (user && user.first_name && user.last_name) {
+        document.getElementById("welcomeMessage").textContent = `👋 Welcome back, ${user.first_name} ${user.last_name}!`;
+    } else if (user && user.first_name) {
+        document.getElementById("welcomeMessage").textContent = `👋 Welcome back, ${user.first_name}!`;
+    }
+}
+
 // Initialize Dashboard
 document.addEventListener("DOMContentLoaded", () => {
     console.log("Initializing Tenant Dashboard...");
-    checkAuth(); // Ensure the user is authenticated
+    checkAuth();
+    setWelcomeMessage();
     fetchBookingStatus();
     fetchBillingNotifications();
 });
